@@ -1,0 +1,70 @@
+<!-- Styles for admin dashboard -->
+<style>
+  /* Sortable table styles */
+  .sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .sortable:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .sortable i.fas {
+    margin-left: 5px;
+    color: #aaa;
+  }
+  
+  .sortable.asc i.fas {
+    color: #007bff;
+  }
+  
+  .sortable.desc i.fas {
+    color: #007bff;
+  }
+
+  /* Chat styling for AI test interface */
+  .chat-message {
+    margin-bottom: 15px;
+    max-width: 85%;
+    clear: both;
+  }
+
+  .user-message {
+    float: right;
+  }
+
+  .assistant-message {
+    float: left;
+  }
+
+  .chat-message .message-content {
+    padding: 10px 14px;
+    border-radius: 12px;
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .user-message .message-content {
+    background-color: #007bff;
+    color: white;
+    border-bottom-right-radius: 2px;
+  }
+
+  .assistant-message .message-content {
+    background-color: #f1f3f4;
+    color: #333;
+    border-bottom-left-radius: 2px;
+  }
+
+  .assistant-message.error .message-content {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .assistant-message.loading .message-content {
+    background-color: #e9ecef;
+    color: #495057;
+  }
+</style>

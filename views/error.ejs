@@ -1,0 +1,26 @@
+<div class="row">
+  <div class="col-md-6 offset-md-3 text-center">
+    <h1 class="display-1 text-danger">Error</h1>
+    <h2 class="mb-4"><%= message %></h2>
+    
+    <% if (process.env.NODE_ENV === 'development' && error && error.stack) { %>
+      <div class="card mt-4 mb-4">
+        <div class="card-header bg-danger text-white">
+          Error Details
+        </div>
+        <div class="card-body text-start">
+          <pre class="text-danger"><%= error.stack %></pre>
+        </div>
+      </div>
+    <% } %>
+    
+    <div class="mt-4">
+      <a href="javascript:history.back()" class="btn btn-secondary me-2">
+        <i class="fas fa-arrow-left"></i> Go Back
+      </a>
+      <a href="/" class="btn btn-primary">
+        <i class="fas fa-home"></i> Go Home
+      </a>
+    </div>
+  </div>
+</div>

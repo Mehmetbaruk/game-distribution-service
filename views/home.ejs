@@ -1,0 +1,201 @@
+<!-- Home Page -->
+<div class="container-fluid p-0">
+  <!-- Hero Section -->
+  <div class="bg-primary bg-gradient text-white py-5 mb-5">
+    <div class="container py-3">
+      <div class="row align-items-center">
+        <div class="col-lg-8">
+          <h1 class="display-4 fw-bold mb-3"><%= locals.t ? t("Game Distribution Service") : "Game Distribution Service" %></h1>
+          <p class="lead fs-4 mb-4"><%= locals.t ? t("Welcome to FreeGames platform. Browse our collection of games, play them online, and share your experience!") : "Welcome to FreeGames platform. Browse our collection of games, play them online, and share your experience!" %></p>
+          
+          <% if (isLoggedIn) { %>
+            <div class="mt-4">
+              <a href="/games" class="btn btn-light btn-lg px-4 me-3">
+                <i class="fas fa-gamepad me-2"></i> <%= locals.t ? t("Browse Games") : "Browse Games" %>
+              </a>
+              <a href="/users/<%= currentUser._id %>" class="btn btn-outline-light btn-lg px-4">
+                <i class="fas fa-user me-2"></i> <%= locals.t ? t("My Profile") : "My Profile" %>
+              </a>
+            </div>
+          <% } else { %>
+            <div class="mt-4">
+              <a href="/user-login" class="btn btn-light btn-lg px-4 me-3">
+                <i class="fas fa-sign-in-alt me-2"></i> <%= locals.t ? t("Login") : "Login" %>
+              </a>
+              <a href="/register" class="btn btn-outline-light btn-lg px-4">
+                <i class="fas fa-user-plus me-2"></i> <%= locals.t ? t("Register") : "Register" %>
+              </a>
+            </div>
+          <% } %>
+        </div>
+        <div class="col-lg-4 d-none d-lg-block text-center">
+          <img src="https://via.placeholder.com/400x300?text=Gaming+Illustration" alt="Gaming" class="img-fluid rounded-3 shadow-lg">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Featured Games Section -->
+    <section class="mb-5">
+      <h2 class="border-bottom pb-2 mb-4">
+        <i class="fas fa-star text-warning me-2"></i> <%= locals.t ? t("Featured Games") : "Featured Games" %>
+      </h2>
+      
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <% if (featuredGames && featuredGames.length > 0) { %>
+          <% featuredGames.forEach(game => { %>
+            <div class="col">
+              <div class="card h-100 border-0 shadow-sm hover-card">
+                <img src="<%= game.photo %>" class="card-img-top game-card-img" alt="<%= game.name %>" style="height: 180px; object-fit: cover;">
+                <div class="card-body">
+                  <h5 class="card-title"><%= game.name %></h5>
+                  <div class="mb-2">
+                    <% game.genres.forEach(genre => { %>
+                      <span class="badge bg-secondary me-1 mb-1"><%= genre %></span>
+                    <% }) %>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                      <% if (game.rating > 0) { %>
+                        <span class="badge bg-warning text-dark">
+                          <i class="fas fa-star me-1"></i> <%= game.rating.toFixed(1) %>
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-secondary"><%= locals.t ? t("No ratings") : "No ratings" %></span>
+                      <% } %>
+                    </div>
+                    <span class="badge bg-info">
+                      <i class="fas fa-clock me-1"></i> <%= game.getFormattedPlayTime ? game.getFormattedPlayTime() : `${game.totalPlayTime} hrs` %>
+                    </span>
+                  </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                  <% if (isLoggedIn) { %>
+                    <a href="/games/<%= game._id %>" class="btn btn-outline-primary w-100"><%= locals.t ? t("View Details") : "View Details" %></a>
+                  <% } else { %>
+                    <button disabled class="btn btn-outline-secondary w-100"><%= locals.t ? t("Login to view") : "Login to view" %></button>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="col-12 text-center py-5">
+            <p class="text-muted"><%= locals.t ? t("No featured games available.") : "No featured games available." %></p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Popular Games Section -->
+    <section class="mb-5">
+      <h2 class="border-bottom pb-2 mb-4">
+        <i class="fas fa-fire text-danger me-2"></i> <%= locals.t ? t("Most Popular Games") : "Most Popular Games" %>
+      </h2>
+      
+      <div class="row">
+        <% if (popularGames && popularGames.length > 0) { %>
+          <% popularGames.forEach(game => { %>
+            <div class="col-md-4 mb-4">
+              <div class="card h-100 border-0 shadow-sm hover-card">
+                <div class="row g-0">
+                  <div class="col-4">
+                    <img src="<%= game.photo %>" class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="<%= game.name %>">
+                  </div>
+                  <div class="col-8">
+                    <div class="card-body">
+                      <h5 class="card-title"><%= game.name %></h5>
+                      <p class="text-muted">
+                        <i class="fas fa-users me-1"></i> <%= locals.t ? t("players") : "players" %>
+                      </p>
+                      <p class="card-text">
+                        <span class="badge bg-info">
+                          <i class="fas fa-clock me-1"></i> <%= game.getFormattedPlayTime ? game.getFormattedPlayTime() : `${game.totalPlayTime} total hours` %>
+                        </span>
+                      </p>
+                      <% if (isLoggedIn) { %>
+                        <a href="/games/<%= game._id %>/play" class="btn btn-sm btn-success">
+                          <i class="fas fa-play me-1"></i> Play Now
+                        </a>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="col-12 text-center py-5">
+            <p class="text-muted"><%= locals.t ? t("No popular games available.") : "No popular games available." %></p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+    
+    <% if (!isLoggedIn) { %>
+      <!-- User Login Section -->
+      <section class="mb-5">
+        <div class="card border-0 shadow">
+          <div class="card-header bg-secondary text-white py-3">
+            <h3 class="mb-0"><i class="fas fa-users me-2"></i><%= locals.t ? t("Quick Login") : "Quick Login" %></h3>
+          </div>
+          <div class="card-body p-4">
+            <p class="lead mb-4"><%= locals.t ? t("Select a user to login and start playing:") : "Select a user to login and start playing:" %></p>
+            
+            <div class="row g-4">
+              <% if (users && users.length > 0) { %>
+                <% users.slice(0, 4).forEach(user => { %>
+                  <div class="col-md-3 col-sm-6">
+                    <div class="card border shadow-sm hover-card">
+                      <div class="card-body text-center py-4">
+                        <i class="fas fa-user-circle fa-4x text-primary mb-3"></i>
+                        <h5 class="card-title mb-2"><%= user.name %></h5>
+                        <p class="card-text small text-muted mb-3">
+                          <i class="fas fa-clock me-1"></i> <%= user.totalPlayTime || 0 %> hrs played
+                        </p>
+                        <a href="/login/<%= user._id %>" class="btn btn-sm btn-primary w-100">
+                          <i class="fas fa-sign-in-alt me-1"></i> <%= locals.t ? t("Login") : "Login" %>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                <% }) %>
+                <% if (users.length > 4) { %>
+                  <div class="col-12 text-center mt-3">
+                    <a href="/user-login" class="btn btn-outline-secondary">
+                      <i class="fas fa-users me-2"></i> <%= locals.t ? t("View All Users") : "View All Users" %>
+                    </a>
+                  </div>
+                <% } %>
+              <% } else { %>
+                <div class="col-12 text-center">
+                  <p class="text-muted"><%= locals.t ? t("No users available. Please register a new user first.") : "No users available. Please register a new user first." %></p>
+                  <a href="/register" class="btn btn-primary mt-2">
+                    <i class="fas fa-user-plus me-2"></i> <%= locals.t ? t("Register New User") : "Register New User" %>
+                  </a>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </section>
+    <% } %>
+  </div>
+</div>
+
+<style>
+  .hover-card {
+    transition: all 0.3s ease;
+  }
+  .hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+  }
+  .game-card-img {
+    transition: all 0.5s ease;
+  }
+  .hover-card:hover .game-card-img {
+    transform: scale(1.05);
+  }
+</style>

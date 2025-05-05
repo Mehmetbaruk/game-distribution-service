@@ -1,0 +1,103 @@
+<!-- Landing Page -->
+<div class="container-fluid p-0">
+  <!-- Hero Section -->
+  <div class="landing-hero position-relative d-flex align-items-center justify-content-center text-center text-white py-5">
+    <div class="bg-overlay position-absolute top-0 start-0 w-100 h-100 bg-dark" style="opacity: 0.7;"></div>
+    <div class="container position-relative py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 py-5">
+          <h1 class="display-2 fw-bold mb-4"><%= locals.t ? t("Welcome to FreeGames") : "Welcome to FreeGames" %></h1>
+          <p class="lead fs-4 mb-5"><%= locals.t ? t("Your ultimate cloud-based game distribution service. Play, rate, and discover amazing games!") : "Your ultimate cloud-based game distribution service. Play, rate, and discover amazing games!" %></p>
+          <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+            <a href="/home" class="btn btn-primary btn-lg px-5 py-3 fs-5">
+              <i class="fas fa-gamepad me-2"></i> <%= locals.t ? t("Enter Platform") : "Enter Platform" %>
+            </a>
+            <a href="/user-login" class="btn btn-success btn-lg px-5 py-3 fs-5">
+              <i class="fas fa-user me-2"></i> <%= locals.t ? t("User Login") : "User Login" %>
+            </a>
+            <a href="/admin-login" class="btn btn-outline-light btn-lg px-5 py-3 fs-5">
+              <i class="fas fa-user-shield me-2"></i> <%= locals.t ? t("Admin Login") : "Admin Login" %>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="bg-light py-5">
+    <div class="container py-4">
+      <h2 class="text-center mb-5 display-6 fw-bold"><%= locals.t ? t("Platform Features") : "Platform Features" %></h2>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+              <i class="fas fa-gamepad text-primary mb-3" style="font-size: 2.5rem;"></i>
+              <h3 class="fw-bold"><%= locals.t ? t("Play Games") : "Play Games" %></h3>
+              <p class="text-muted"><%= locals.t ? t("Access a diverse library of games and track your play time seamlessly in the cloud.") : "Access a diverse library of games and track your play time seamlessly in the cloud." %></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+              <i class="fas fa-star text-warning mb-3" style="font-size: 2.5rem;"></i>
+              <h3 class="fw-bold"><%= locals.t ? t("Rate & Comment") : "Rate & Comment" %></h3>
+              <p class="text-muted"><%= locals.t ? t("Share your thoughts and ratings with the community after playing games.") : "Share your thoughts and ratings with the community after playing games." %></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+              <i class="fas fa-users text-success mb-3" style="font-size: 2.5rem;"></i>
+              <h3 class="fw-bold"><%= locals.t ? t("Join Community") : "Join Community" %></h3>
+              <p class="text-muted"><%= locals.t ? t("Create your profile and connect with other gamers in our growing community.") : "Create your profile and connect with other gamers in our growing community." %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Section -->
+  <div class="bg-dark text-white py-5">
+    <div class="container py-4">
+      <div class="row align-items-center">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+          <h2 class="display-6 fw-bold mb-4"><%= locals.t ? t("About FreeGames") : "About FreeGames" %></h2>
+          <p class="lead"><%= locals.t ? t("Our cloud-based platform offers a seamless gaming experience with advanced features:") : "Our cloud-based platform offers a seamless gaming experience with advanced features:" %></p>
+          <ul class="lead">
+            <li class="mb-2"><%= locals.t ? t("Play any game without installation") : "Play any game without installation" %></li>
+            <li class="mb-2"><%= locals.t ? t("Track your play time and statistics") : "Track your play time and statistics" %></li>
+            <li class="mb-2"><%= locals.t ? t("Rate games and share your experience") : "Rate games and share your experience" %></li>
+            <li class="mb-2"><%= locals.t ? t("Discover new titles through user reviews") : "Discover new titles through user reviews" %></li>
+          </ul>
+          <p class="mt-4">
+            <i class="fas fa-university me-2"></i>
+            THKU Department of Software Engineering<br>
+            <small class="text-muted">SENG 454 Cloud Systems and Networks - Term Project</small>
+          </p>
+        </div>
+        <div class="col-lg-6 text-center">
+          <img src="https://via.placeholder.com/500x300?text=Cloud%20Gaming" alt="Cloud Gaming" class="img-fluid rounded shadow-lg">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .landing-hero {
+    background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80');
+    background-size: cover;
+    background-position: center;
+    min-height: 600px;
+  }
+  .hover-lift {
+    transition: transform 0.3s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-10px);
+  }
+</style>

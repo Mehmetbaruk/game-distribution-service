@@ -1,0 +1,509 @@
+<!-- Game Details Header -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="display-4 fw-bold text-primary"><%= game.name %></h1>
+      <div>
+        <a href="/games" class="btn btn-outline-secondary me-2">
+          <i class="fas fa-list"></i> <%= locals.t ? t("All Games") : "All Games" %>
+        </a>
+        <a href="/users/<%= currentUser._id %>" class="btn btn-primary">
+          <i class="fas fa-user"></i> <%= locals.t ? t("My Profile") : "My Profile" %>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Game Image and Info -->
+  <div class="col-md-4 mb-4">
+    <div class="card shadow-sm border-0 h-100">
+      <img src="<%= game.photo %>" class="card-img-top" alt="<%= game.name %>" style="height: 300px; object-fit: cover;">
+      <div class="card-body">
+        <h5 class="card-title fw-bold"><%= game.name %></h5>
+        
+        <!-- Play Game Button -->
+        <div class="mb-4 text-center">
+          <a href="/games/<%= game._id %>/play" class="btn btn-success btn-lg w-100">
+            <i class="fas fa-play-circle me-2"></i> <%= locals.t ? t("Play Game") : "Play Game" %>
+          </a>
+        </div>
+        
+        <!-- Genres -->
+        <div class="mb-3">
+          <strong><i class="fas fa-tags me-2"></i><%= locals.t ? t("Genres:") : "Genres:" %></strong>
+          <div class="mt-2">
+            <% game.genres.forEach(genre => { %>
+              <span class="badge bg-secondary me-1 mb-1 p-2"><%= genre %></span>
+            <% }); %>
+          </div>
+        </div>
+        
+        <!-- Rating -->
+        <div class="mb-3">
+          <strong><i class="fas fa-star me-2"></i><%= locals.t ? t("Rating:") : "Rating:" %></strong>
+          <div class="d-flex align-items-center mt-2">
+            <div class="me-2">
+              <% if (game.rating > 0) { %>
+                <% for (let i = 1; i <= 5; i++) { %>
+                  <% if (i <= Math.round(game.rating)) { %>
+                    <i class="fas fa-star text-warning"></i>
+                  <% } else { %>
+                    <i class="far fa-star text-warning"></i>
+                  <% } %>
+                <% } %>
+              <% } %>
+            </div>
+            <% if (game.rating > 0) { %>
+              <span class="badge bg-warning px-2 py-1"><%= game.rating.toFixed(1) %> / 5</span>
+            <% } else { %>
+              <span class="badge bg-secondary px-2 py-1"><%= locals.t ? t("No ratings yet") : "No ratings yet" %></span>
+            <% } %>
+            
+            <% if (game.ratingDisabled) { %>
+              <span class="badge bg-danger ms-2 px-2 py-1"><%= locals.t ? t("Rating Disabled") : "Rating Disabled" %></span>
+            <% } %>
+          </div>
+        </div>
+        
+        <!-- Play Time -->
+        <div class="mb-3">
+          <strong><i class="fas fa-clock me-2"></i><%= locals.t ? t("Total Play Time:") : "Total Play Time:" %></strong>
+          <span class="badge bg-info px-2 py-1 ms-2"><%= game.getFormattedPlayTime ? game.getFormattedPlayTime() : `${game.totalPlayTime} hours` %></span>
+        </div>
+        
+        <!-- Optional Fields -->
+        <% if (game.optional1) { %>
+          <div class="mb-3">
+            <strong><i class="fas fa-info-circle me-2"></i><%= locals.t ? t("Optional Field 1:") : "Optional Field 1:" %></strong>
+            <p class="mt-1 text-secondary"><%= game.optional1 %></p>
+          </div>
+        <% } %>
+        
+        <% if (game.optional2) { %>
+          <div class="mb-3">
+            <strong><i class="fas fa-info-circle me-2"></i><%= locals.t ? t("Optional Field 2:") : "Optional Field 2:" %></strong>
+            <p class="mt-1 text-secondary"><%= game.optional2 %></p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Game Comments -->
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h3 class="mb-0"><i class="fas fa-comments me-2"></i><%= locals.t ? t("All Comments") : "All Comments" %></h3>
+          <% if (game.commentDisabled) { %>
+            <span class="badge bg-danger px-3 py-2"><%= locals.t ? t("Comments Disabled") : "Comments Disabled" %></span>
+          <% } %>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Add a comment form -->
+        <% if (!game.commentDisabled && userGameStat && (userGameStat.playTimeSeconds || 0) >= 10) { %>
+          <div class="add-comment-section mb-4 p-3 bg-light rounded">
+            <h5 class="mb-3"><i class="fas fa-comment-dots me-2 text-primary"></i> <%= locals.t ? t("Share Your Thoughts") : "Share Your Thoughts" %></h5>
+            <form action="/games/<%= game._id %>/comment" method="POST">
+              <div class="mb-3">
+                <textarea class="form-control shadow-sm" name="comment" rows="3" placeholder="<%= locals.t ? t("Write your comment here...") : "Write your comment here..." %>" required><%= userGameStat.comment || '' %></textarea>
+              </div>
+              <div class="text-end">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-paper-plane me-1"></i> <%= locals.t ? t(userGameStat.comment ? "Update Comment" : "Add Comment") : (userGameStat.comment ? 'Update Comment' : 'Add Comment') %>
+                </button>
+              </div>
+            </form>
+          </div>
+        <% } else if (!game.commentDisabled) { %>
+          <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i> <%= locals.t ? t("You need to play this game for at least 10 seconds before you can comment.") : "You need to play this game for at least 10 seconds before you can comment." %>
+          </div>
+        <% } %>
+
+        <!-- Comments list -->
+        <% if (comments && comments.length > 0) { %>
+          <div class="comment-section">
+            <% comments.forEach(comment => { %>
+              <div class="comment-item mb-3 p-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-user-circle me-2"></i><%= comment.user.name %>
+                  </h5>
+                  <span class="badge bg-light text-dark px-3 py-2">
+                    <i class="fas fa-clock me-1"></i>
+                    <% 
+                      // Calculate total seconds (combining hours and additional seconds)
+                      const totalSeconds = (comment.playTime * 3600) + (comment.playTimeSeconds || 0);
+                      const hours = Math.floor(totalSeconds / 3600);
+                      const minutes = Math.floor((totalSeconds % 3600) / 60);
+                      const seconds = totalSeconds % 60;
+                      
+                      let timeStr = '';
+                      if (hours > 0) {
+                        timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                      } else if (minutes > 0) {
+                        timeStr = `${minutes}m ${seconds}s`;
+                      } else {
+                        timeStr = `${seconds}s`;
+                      }
+                    %>
+                    <%= timeStr %> <%= locals.t ? t("played") : "played" %>
+                  </span>
+                </div>
+                <p class="mb-1 lead"><%= comment.comment %></p>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="fas fa-comment-slash text-muted mb-3" style="font-size: 3rem;"></i>
+            <p class="lead text-muted"><%= locals.t ? t("No comments yet. Be the first to share your thoughts!") : "No comments yet. Be the first to share your thoughts!" %></p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rate Game Section -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-warning">
+        <h3 class="card-title mb-0 text-dark"><i class="fas fa-star me-2"></i><%= locals.t ? t("Rate This Game") : "Rate This Game" %></h3>
+      </div>
+      <div class="card-body">
+        <% if (!game.ratingDisabled && userGameStat && (userGameStat.playTimeSeconds || 0) >= 10) { %>
+          <form action="/games/<%= game._id %>/rate" method="POST" class="text-center py-3">
+            <div class="mb-4">
+              <p class="mb-3"><%= locals.t ? t(`How would you rate your experience with ${game.name}?`) : `How would you rate your experience with ${game.name}?` %></p>
+              <div class="rating-stars">
+                <div class="rating-star-group" style="font-size: 2.5rem;">
+                  <% for (let i = 1; i <= 5; i++) { %>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input d-none" type="radio" name="rating" id="gameRating<%= i %>" 
+                             value="<%= i %>" <%= userGameStat.rating === i ? 'checked' : '' %> required>
+                      <label class="form-check-label" for="gameRating<%= i %>">
+                        <i class="<%= userGameStat.rating >= i ? 'fas' : 'far' %> fa-star text-warning rating-star" data-rating="<%= i %>"></i>
+                      </label>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-warning btn-lg px-5">
+              <i class="fas fa-paper-plane me-2"></i> <%= locals.t ? t(userGameStat.rating ? "Update Rating" : "Submit Rating") : (userGameStat.rating ? 'Update Rating' : 'Submit Rating') %>
+            </form>
+
+          <!-- Star Rating JavaScript -->
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              const stars = document.querySelectorAll('.rating-star');
+              stars.forEach(star => {
+                star.addEventListener('mouseover', function() {
+                  const rating = parseInt(this.dataset.rating);
+                  updateStars(stars, rating, false);
+                });
+                
+                star.addEventListener('click', function() {
+                  const rating = parseInt(this.dataset.rating);
+                  updateStars(stars, rating, true);
+                  document.getElementById('gameRating' + rating).checked = true;
+                });
+              });
+              
+              const starContainer = document.querySelector('.rating-star-group');
+              starContainer.addEventListener('mouseout', function() {
+                const checkedRadio = document.querySelector('input[name="rating"]:checked');
+                const rating = checkedRadio ? parseInt(checkedRadio.value) : 0;
+                updateStars(stars, rating, true);
+              });
+
+              function updateStars(stars, rating, clicked) {
+                stars.forEach(star => {
+                  const starRating = parseInt(star.dataset.rating);
+                  if (starRating <= rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas');
+                  } else {
+                    star.classList.remove('fas');
+                    star.classList.add('far');
+                  }
+                });
+              }
+            });
+          </script>
+        <% } else if (!game.ratingDisabled) { %>
+          <div class="alert alert-info text-center p-4">
+            <i class="fas fa-info-circle fa-2x mb-3 d-block text-info"></i>
+            <h5><%= locals.t ? t("You need to play this game more before rating") : "You need to play this game more before rating" %></h5>
+            <p class="mb-0"><%= locals.t ? t(`You must play "${game.name}" for at least 10 seconds to be able to rate it.`) : `You must play "${game.name}" for at least 10 seconds to be able to rate it.` %></p>
+          </div>
+        <% } else { %>
+          <div class="alert alert-danger text-center p-4">
+            <i class="fas fa-exclamation-circle fa-2x mb-3 d-block text-danger"></i>
+            <h5><%= locals.t ? t("Rating is disabled") : "Rating is disabled" %></h5>
+            <p class="mb-0"><%= locals.t ? t("The administrator has disabled ratings for this game.") : "The administrator has disabled ratings for this game." %></p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Analytics Section -->
+<% if (currentUser.isAdmin || (currentUser.roles && currentUser.roles.isAdmin)) { %>
+  <!-- Admin Analytics Section - Only visible to admins -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card shadow-sm border-0 bg-light">
+        <div class="card-header bg-dark text-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0"><i class="fas fa-chart-bar me-2"></i><%= locals.t ? t("Admin Analytics") : "Admin Analytics" %></h3>
+            <a href="/games/<%= game._id %>/statistics" class="btn btn-outline-light btn-sm">
+              <i class="fas fa-chart-line me-1"></i> <%= locals.t ? t("View Full Analytics") : "View Full Analytics" %>
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <!-- Most Played Users Section -->
+            <div class="col-lg-6">
+              <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-trophy me-2"></i><%= locals.t ? t("Most Played Users") : "Most Played Users" %></h5>
+                    <a href="/games/<%= game._id %>/statistics" class="btn btn-sm btn-outline-light">
+                      <i class="fas fa-expand-alt me-1"></i> <%= locals.t ? t("Full View") : "Full View" %>
+                    </a>
+                  </div>
+                </div>
+                <div class="card-body p-0">
+                  <% 
+                    // Filter out deleted users and sort by play time
+                    const validUserStats = game.userStats.filter(stat => 
+                      stat.user && typeof stat.user === 'object' && stat.user.name
+                    );
+                    
+                    if (validUserStats && validUserStats.length > 0) { 
+                      // Create sortedUserStats by filtering valid users and sorting by play time
+                      const sortedUserStats = validUserStats.sort((a, b) => {
+                        const aSeconds = a.playTimeSeconds || (a.playTime * 3600);
+                        const bSeconds = b.playTimeSeconds || (b.playTime * 3600);
+                        return bSeconds - aSeconds;
+                      });
+                  %>
+                    <div class="table-responsive">
+                      <table class="table table-hover">
+                        <thead class="table-light">
+                          <tr>
+                            <th>#</th>
+                            <th>User</th>
+                            <th>Play Time</th>
+                            <th>Rating</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% sortedUserStats.forEach((stat, index) => { %>
+                            <tr>
+                              <td><%= index + 1 %></td>
+                              <td>
+                                <%= stat.user.name %>
+                              </td>
+                              <td>
+                                <% 
+                                  const totalSeconds = stat.playTimeSeconds || (stat.playTime * 3600);
+                                  const hours = Math.floor(totalSeconds / 3600);
+                                  const minutes = Math.floor((totalSeconds % 3600) / 60);
+                                  const seconds = totalSeconds % 60;
+                                  
+                                  let timeStr = '';
+                                  if (hours > 0) {
+                                    timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                                  } else if (minutes > 0) {
+                                    timeStr = `${minutes}m ${seconds}s`;
+                                  } else {
+                                    timeStr = `${seconds}s`;
+                                  }
+                                %>
+                                <%= timeStr %>
+                              </td>
+                              <td>
+                                <% if (stat.rating && stat.rating > 0) { %>
+                                  <div class="d-flex align-items-center">
+                                    <div class="me-1" style="color: #ffc107;">
+                                      <i class="fas fa-star"></i>
+                                    </div>
+                                    <%= stat.rating %>
+                                  </div>
+                                <% } else { %>
+                                  <span class="text-muted"><%= locals.t ? t("Not rated") : "Not rated" %></span>
+                                <% } %>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        </tbody>
+                      </table>
+                    </div>
+                  <% } else { %>
+                    <div class="text-center py-4">
+                      <i class="fas fa-users text-muted mb-3" style="font-size: 2.5rem;"></i>
+                      <p class="mb-0"><%= locals.t ? t("No active users have played this game yet") : "No active users have played this game yet" %></p>
+                    </div>
+                  <% } %>
+                  
+                  <% if (invalidUserCount > 0) { %>
+                    <div class="p-3 border-top">
+                      <div class="alert alert-warning mb-0">
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-exclamation-triangle me-3 fs-4"></i>
+                          <div>
+                            <h6 class="mb-1"><%= locals.t ? t("Data requires cleanup") : "Data requires cleanup" %></h6>
+                            <p class="mb-2">
+                              <%= invalidUserCount %> <%= locals.t ? t(invalidUserCount === 1 ? 'deleted user has' : 'deleted users have') : (invalidUserCount === 1 ? 'deleted user has' : 'deleted users have') %> <%= locals.t ? t("played this game.") : "played this game." %>
+                              <%= locals.t ? t("Their statistics are still being counted in totals.") : "Their statistics are still being counted in totals." %>
+                            </p>
+                            <a href="/games/<%= game._id %>/analytics" class="btn btn-sm btn-warning">
+                              <%= locals.t ? t("Manage Data") : "Manage Data" %>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rating Statistics -->
+            <div class="col-lg-6">
+              <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-star me-2"></i><%= locals.t ? t("Rating Statistics") : "Rating Statistics" %></h5>
+                    <a href="/games/<%= game._id %>/statistics" class="btn btn-sm btn-outline-dark">
+                      <i class="fas fa-expand-alt me-1"></i> <%= locals.t ? t("Full View") : "Full View" %>
+                    </a>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <% 
+                    // Filter ratings for valid users only
+                    const validRatings = game.userStats.filter(s => 
+                      s.rating > 0 && 
+                      s.user && 
+                      typeof s.user === 'object' &&
+                      s.user.name
+                    );
+                    
+                    if (validRatings.length > 0) { 
+                  %>
+                    <!-- Calculate rating breakdown -->
+                    <% 
+                      const ratingCount = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+                      let totalRatings = 0;
+                      
+                      validRatings.forEach(stat => {
+                        ratingCount[stat.rating]++;
+                        totalRatings++;
+                      });
+                    %>
+                    
+                    <!-- Rating Distribution -->
+                    <h6 class="mb-3"><%= locals.t ? t("Rating Distribution") : "Rating Distribution" %></h6>
+                    <% for (let i = 5; i >= 1; i--) { %>
+                      <div class="d-flex align-items-center mb-2">
+                        <div style="width: 60px">
+                          <strong><%= i %> <i class="fas fa-star text-warning"></i></strong>
+                        </div>
+                        <div class="flex-grow-1 mx-2">
+                          <div class="progress" style="height: 12px">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                style="width: <%= (ratingCount[i] / totalRatings) * 100 %>%" 
+                                aria-valuenow="<%= (ratingCount[i] / totalRatings) * 100 %>" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100"></div>
+                          </div>
+                        </div>
+                        <div style="width: 40px">
+                          <%= ratingCount[i] %>
+                        </div>
+                      </div>
+                    <% } %>
+                    
+                    <!-- Rating Summary -->
+                    <div class="mt-4">
+                      <div class="row text-center">
+                        <div class="col-4">
+                          <div class="card bg-light mb-2">
+                            <div class="card-body py-2">
+                              <h3 class="mb-0 fw-bold"><%= game.rating.toFixed(1) %></h3>
+                            </div>
+                          </div>
+                          <p class="small"><%= locals.t ? t("Average Rating") : "Average Rating" %></p>
+                        </div>
+                        <div class="col-4">
+                          <div class="card bg-light mb-2">
+                            <div class="card-body py-2">
+                              <h3 class="mb-0 fw-bold"><%= totalRatings %></h3>
+                            </div>
+                          </div>
+                          <p class="small"><%= locals.t ? t("Total Ratings") : "Total Ratings" %></p>
+                        </div>
+                        <div class="col-4">
+                          <div class="card bg-light mb-2">
+                            <div class="card-body py-2">
+                              <h3 class="mb-0 fw-bold"><%= Math.max(...Object.keys(ratingCount).filter(key => ratingCount[key] > 0)) %></h3>
+                            </div>
+                          </div>
+                          <p class="small"><%= locals.t ? t("Highest Rating") : "Highest Rating" %></p>
+                        </div>
+                      </div>
+                    </div>
+                  <% } else { %>
+                    <div class="text-center py-4">
+                      <i class="fas fa-star text-muted mb-3" style="font-size: 2.5rem;"></i>
+                      <p class="mb-0"><%= locals.t ? t("No ratings from active users for this game yet") : "No ratings from active users for this game yet" %></p>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<!-- Play More Call to Action -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm border-0 bg-light">
+      <div class="card-body text-center py-4">
+        <h3 class="mb-3"><%= locals.t ? t("Ready to dive in?") : "Ready to dive in?" %></h3>
+        <a href="/games/<%= game._id %>/play" class="btn btn-lg btn-success px-5 py-3">
+          <i class="fas fa-play-circle me-2"></i> <%= locals.t ? t("Play Game Now") : "Play Game Now" %>
+        </a>
+        <a href="/users/<%= currentUser._id %>" class="btn btn-lg btn-outline-primary px-5 py-3 ms-3">
+          <i class="fas fa-user me-2"></i> <%= locals.t ? t("Go to Your Profile") : "Go to Your Profile" %>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .rating-star {
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .rating-star:hover {
+    transform: scale(1.2);
+  }
+</style>

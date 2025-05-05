@@ -1,0 +1,588 @@
+<div class="row g-4">
+  <!-- AI Assistant Status Card -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0"><i class="fas fa-robot me-2"></i>AI Assistant Status</h5>
+        <button class="btn btn-sm btn-light" id="refresh-ai-status">
+          <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="ai-status-container">
+          <!-- Status will be loaded here -->
+          <div class="text-center py-3">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading AI Assistant status...</p>
+          </div>
+        </div>
+        
+        <div class="mt-4 pt-3 border-top" id="ai-status-details">
+          <h6 class="mb-3">OpenAI Configuration</h6>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <tbody>
+                <tr>
+                  <td width="40%">Connection Status:</td>
+                  <td><span id="ai-connection-status" class="badge bg-secondary">Unknown</span></td>
+                </tr>
+                <tr>
+                  <td>API Key:</td>
+                  <td>
+                    <code id="ai-api-key">sk-****</code>
+                    <button class="btn btn-sm btn-link p-0 ms-2" id="show-api-key" data-showing="false">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Model:</td>
+                  <td id="ai-model">gpt-4o-mini</td>
+                </tr>
+                <tr>
+                  <td>Status:</td>
+                  <td><span id="ai-active-status" class="badge bg-secondary">Unknown</span></td>
+                </tr>
+                <tr>
+                  <td>Last Request:</td>
+                  <td id="ai-last-request">Never</td>
+                </tr>
+                <tr>
+                  <td>Total Requests:</td>
+                  <td id="ai-total-requests">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="mt-4 pt-3 border-top">
+          <h6 class="mb-3">Quick Actions</h6>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary" id="test-ai-connection">
+              <i class="fas fa-plug me-1"></i>Test Connection
+            </button>
+            <button class="btn btn-outline-secondary" id="clear-ai-logs">
+              <i class="fas fa-broom me-1"></i>Clear Logs
+            </button>
+            <button class="btn btn-outline-success" id="open-ai-chat">
+              <i class="fas fa-comments me-1"></i>Open Chat
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- AI Assistant Test Interface -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-info text-white d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0"><i class="fas fa-comment-alt me-2"></i>Test AI Assistant</h5>
+      </div>
+      <div class="card-body d-flex flex-column">
+        <div class="flex-grow-1 mb-3" style="height: 350px; overflow-y: auto;" id="ai-test-messages">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            This is a test interface for the AI Assistant. Send a message to test the assistant's responses.
+          </div>
+          
+          <div class="chat-message assistant-message">
+            <div class="message-content">
+              <p>Hello, Admin! I'm your AI assistant. What would you like to know about the platform today?</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="input-group">
+          <input type="text" id="ai-test-input" class="form-control" placeholder="Type a test message...">
+          <button class="btn btn-primary" id="ai-test-send">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- AI Logs -->
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent AI Assistant Logs</h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-light" id="refresh-ai-logs">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+          </button>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="logFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              Filter
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="logFilterDropdown">
+              <li><a class="dropdown-item active" href="#" data-filter="all">All Logs</a></li>
+              <li><a class="dropdown-item" href="#" data-filter="chat_request">Chat Requests</a></li>
+              <li><a class="dropdown-item" href="#" data-filter="chat_response">Chat Responses</a></li>
+              <li><a class="dropdown-item" href="#" data-filter="admin">Admin Requests</a></li>
+              <li><a class="dropdown-item" href="#" data-filter="user">User Requests</a></li>
+              <li><a class="dropdown-item" href="#" data-filter="error">Errors</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Timestamp</th>
+                <th>Event Type</th>
+                <th>User</th>
+                <th>Message</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ai-logs-table">
+              <tr>
+                <td colspan="5" class="text-center py-4">Loading logs...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header py-3">
+    <h5 class="mb-0"><i class="fas fa-brain text-primary me-2"></i>AI Assistant</h5>
+  </div>
+  <div class="card-body">
+    <div class="mb-4">
+      <label class="form-label mb-2">What would you like to know about your platform?</label>
+      <div class="d-flex gap-2 flex-wrap">
+        <!-- Query Buttons -->
+        <button class="btn btn-outline-primary" data-query="randomGames">
+          <i class="fas fa-dice me-1"></i>Random Games
+        </button>
+        <button class="btn btn-outline-primary" data-query="rareGames">
+          <i class="fas fa-gem me-1"></i>Rare Games
+        </button>
+        <button class="btn btn-outline-primary" data-query="topGames" data-criteria="plays">
+          <i class="fas fa-fire me-1"></i>Most Played Games
+        </button>
+        <button class="btn btn-outline-primary" data-query="topGames" data-criteria="ratings">
+          <i class="fas fa-star me-1"></i>Top Rated Games
+        </button>
+        <button class="btn btn-outline-primary" data-query="randomUsers">
+          <i class="fas fa-users me-1"></i>Random Users
+        </button>
+        <button class="btn btn-outline-primary" data-query="platformOverview">
+          <i class="fas fa-chart-line me-1"></i>Platform Overview
+        </button>
+      </div>
+    </div>
+    
+    <div class="mt-3">
+      <div class="d-flex align-items-center mb-3" id="ai-assistant-loading" style="display: none !important;">
+        <div class="spinner-border text-primary me-2" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <span>Processing query...</span>
+      </div>
+      
+      <div id="ai-assistant-results" class="border rounded p-3 bg-light">
+        <div class="text-center text-muted py-5">
+          <i class="fas fa-robot mb-3" style="font-size: 3rem;"></i>
+          <h5>AI Assistant Ready</h5>
+          <p>Select a query option above to get platform insights</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize AI Assistant
+    const queryButtons = document.querySelectorAll('[data-query]');
+    const resultsContainer = document.getElementById('ai-assistant-results');
+    const loadingElement = document.getElementById('ai-assistant-loading');
+    
+    queryButtons.forEach(button => {
+      button.addEventListener('click', async () => {
+        // Set active button
+        queryButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Show loading
+        loadingElement.style.display = 'flex';
+        
+        try {
+          // Get query type
+          const queryType = button.dataset.query;
+          
+          // Prepare parameters
+          const params = { queryType };
+          
+          // Add additional parameters based on query type
+          if (queryType === 'topGames') {
+            params.criteria = button.dataset.criteria || 'plays';
+            params.days = 7;
+            params.limit = 5;
+          }
+          
+          // Make API call
+          const response = await fetch('/admin/api/ai-query', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(params)
+          });
+          
+          // Check if request was successful
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to get AI response');
+          }
+          
+          // Process response
+          const result = await response.json();
+          
+          // Display results based on query type
+          switch(queryType) {
+            case 'randomGames':
+              renderGameList(result.games, 'Random Games');
+              break;
+            case 'rareGames':
+              renderGameList(result.games, 'Rare & Underplayed Games');
+              break;
+            case 'topGames':
+              const criteria = params.criteria;
+              const title = criteria === 'plays' ? 'Most Played Games' : 'Top Rated Games';
+              renderGameList(result.games, title);
+              break;
+            case 'randomUsers':
+              renderUserList(result.users, 'Random User Statistics');
+              break;
+            case 'platformOverview':
+              renderPlatformOverview(result.overview);
+              break;
+            default:
+              resultsContainer.innerHTML = '<div class="alert alert-info">Unknown query type</div>';
+          }
+        } catch (error) {
+          console.error('AI Assistant error:', error);
+          resultsContainer.innerHTML = `
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              ${error.message || 'Failed to process request'}
+            </div>
+          `;
+        } finally {
+          loadingElement.style.display = 'none';
+        }
+      });
+    });
+    
+    // Helper function to render game list
+    function renderGameList(games, title) {
+      if (!games || games.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            No games found for this query
+          </div>
+        `;
+        return;
+      }
+      
+      let html = `
+        <h5 class="border-bottom pb-2 mb-3">
+          <i class="fas fa-gamepad me-2 text-primary"></i>${title}
+        </h5>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Game</th>
+                <th>Rating</th>
+                ${games[0].playCount !== undefined ? '<th>Play Count</th>' : ''}
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      games.forEach((game, index) => {
+        html += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>
+              <strong>${game.name}</strong>
+              ${game.genre ? `<br><small class="text-muted">${Array.isArray(game.genre) ? game.genre.join(', ') : game.genre}</small>` : ''}
+            </td>
+            <td>
+              ${typeof game.rating === 'number' || typeof game.averageRating === 'number' ? 
+                `<span class="badge bg-warning text-dark">
+                  ${(game.rating || game.averageRating || 0).toFixed(1)}
+                  <i class="fas fa-star ms-1"></i>
+                </span>` : 
+                'N/A'}
+              ${game.ratingCount ? `<br><small>${game.ratingCount} ratings</small>` : ''}
+            </td>
+            ${game.playCount !== undefined ? 
+              `<td>
+                <span class="badge bg-info">${game.playCount}</span>
+                ${game.totalPlayTime ? `<br><small>${(game.totalPlayTime/3600).toFixed(1)} hours</small>` : ''}
+              </td>` : ''}
+            <td>
+              <a href="/games/${game.id}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+      
+      resultsContainer.innerHTML = html;
+    }
+    
+    // Helper function to render user list
+    function renderUserList(users, title) {
+      if (!users || users.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            No user data found
+          </div>
+        `;
+        return;
+      }
+      
+      let html = `
+        <h5 class="border-bottom pb-2 mb-3">
+          <i class="fas fa-users me-2 text-primary"></i>${title}
+        </h5>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Activity</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      users.forEach(user => {
+        html += `
+          <tr>
+            <td>
+              <strong>${user.name}</strong>
+              <br><small class="text-muted">ID: ${user.id}</small>
+            </td>
+            <td>
+              <div><i class="fas fa-clock me-1 text-info"></i> ${user.totalHours} hours</div>
+              <div><i class="fas fa-gamepad me-1 text-success"></i> ${user.gamesPlayed} games played</div>
+            </td>
+            <td>
+              ${user.isActive ? 
+                '<span class="badge bg-success">Active</span>' : 
+                '<span class="badge bg-secondary">Inactive</span>'}
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+      
+      resultsContainer.innerHTML = html;
+    }
+    
+    // Helper function to render platform overview
+    function renderPlatformOverview(overview) {
+      if (!overview) {
+        resultsContainer.innerHTML = `
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            No platform data available
+          </div>
+        `;
+        return;
+      }
+      
+      let html = `
+        <h5 class="border-bottom pb-2 mb-3">
+          <i class="fas fa-chart-line me-2 text-primary"></i>Platform Overview
+        </h5>
+        
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card bg-primary text-white">
+              <div class="card-body text-center">
+                <h3>${overview.totalUsers}</h3>
+                <div>Total Users</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <h3>${overview.totalGames}</h3>
+                <div>Total Games</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3">
+            <div class="card bg-info text-white">
+              <div class="card-body text-center">
+                <h3>${overview.dailyReport?.summary?.gamesPlayed || 0}</h3>
+                <div>Today's Game Sessions</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3">
+            <div class="card bg-warning">
+              <div class="card-body text-center">
+                <h3>${overview.dailyReport?.summary?.ratingsSubmitted || 0}</h3>
+                <div>Today's Ratings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-fire me-2 text-danger"></i>Top Games by Plays</h6>
+              </div>
+              <div class="card-body">
+                ${renderMiniGameList(overview.topGamesByPlays || [])}
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-star me-2 text-warning"></i>Top Games by Rating</h6>
+              </div>
+              <div class="card-body">
+                ${renderMiniGameList(overview.topGamesByRatings || [])}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2 text-info"></i>Significant Users</h6>
+              </div>
+              <div class="card-body">
+                ${renderMiniUserList(overview.significantUsers || [])}
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-gem me-2 text-primary"></i>Rare Games</h6>
+              </div>
+              <div class="card-body">
+                ${renderMiniGameList(overview.rareGames || [])}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      resultsContainer.innerHTML = html;
+    }
+    
+    // Helper function to render mini game list
+    function renderMiniGameList(games) {
+      if (!games || games.length === 0) {
+        return '<div class="text-muted text-center py-3">No data available</div>';
+      }
+      
+      let html = '<ul class="list-group list-group-flush">';
+      
+      games.forEach((game, index) => {
+        html += `
+          <li class="list-group-item px-0">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>${index + 1}. ${game.name}</strong>
+                ${game.genre ? `<br><small class="text-muted">${Array.isArray(game.genre) ? game.genre.join(', ') : game.genre}</small>` : ''}
+              </div>
+              <div class="text-end">
+                ${game.rating || game.averageRating ? 
+                  `<div><i class="fas fa-star text-warning"></i> ${(game.rating || game.averageRating).toFixed(1)}</div>` : ''}
+                ${game.playCount ? 
+                  `<div><i class="fas fa-gamepad text-info"></i> ${game.playCount}</div>` : ''}
+              </div>
+            </div>
+          </li>
+        `;
+      });
+      
+      html += '</ul>';
+      return html;
+    }
+    
+    // Helper function to render mini user list
+    function renderMiniUserList(users) {
+      if (!users || users.length === 0) {
+        return '<div class="text-muted text-center py-3">No data available</div>';
+      }
+      
+      let html = '<ul class="list-group list-group-flush">';
+      
+      users.forEach((user, index) => {
+        const isPositive = user.change > 0;
+        const changeClass = isPositive ? 'text-success' : 'text-danger';
+        const changeIcon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
+        
+        html += `
+          <li class="list-group-item px-0">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>${user.name}</strong>
+                <br><small class="text-muted">Current: ${user.currentCount} activities</small>
+              </div>
+              <div class="text-end ${changeClass}">
+                <i class="fas ${changeIcon} me-1"></i>
+                ${Math.abs(user.percentChange).toFixed(0)}%
+              </div>
+            </div>
+          </li>
+        `;
+      });
+      
+      html += '</ul>';
+      return html;
+    }
+  });
+</script>

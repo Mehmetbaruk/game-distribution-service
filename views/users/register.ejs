@@ -1,0 +1,58 @@
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-lg">
+      <div class="card-header bg-success text-white py-3">
+        <h2 class="mb-0"><i class="fas fa-user-plus me-2"></i><%= locals.t ? t("Register New User") : "Register New User" %></h2>
+      </div>
+      <div class="card-body p-4">
+        <p class="lead mb-4"><%= locals.t ? t("Create your account to start playing games!") : "Create your account to start playing games!" %></p>
+        
+        <form action="/register" method="POST" class="needs-validation" novalidate>
+          <div class="mb-4">
+            <label for="userName" class="form-label"><%= locals.t ? t("Username") : "Username" %></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-user"></i></span>
+              <input type="text" class="form-control" id="userName" name="name" placeholder="<%= locals.t ? t("Enter your username") : "Enter your username" %>" required>
+            </div>
+            <div class="form-text"><%= locals.t ? t("Choose a unique username for your gaming profile.") : "Choose a unique username for your gaming profile." %></div>
+          </div>
+          
+          <div class="mb-4">
+            <label for="email" class="form-label"><%= locals.t ? t("Email (optional)") : "Email (optional)" %></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+              <input type="email" class="form-control" id="email" name="email" placeholder="<%= locals.t ? t("Enter your email address") : "Enter your email address" %>">
+            </div>
+          </div>
+          
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-success btn-lg">
+              <i class="fas fa-user-plus me-2"></i> <%= locals.t ? t("Create Account") : "Create Account" %>
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer bg-light p-4 text-center">
+        <p class="mb-0"><%= locals.t ? t("Already have an account? <a href=\"/user-login\" class=\"text-decoration-none\">Login here</a>") : "Already have an account? <a href=\"/user-login\" class=\"text-decoration-none\">Login here</a>" %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Form validation
+  document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+      }, false);
+    });
+  });
+</script>

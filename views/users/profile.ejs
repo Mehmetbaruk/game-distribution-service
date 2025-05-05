@@ -1,0 +1,778 @@
+<!-- User Profile Header -->
+<div class="bg-primary text-white py-4 mb-4 rounded shadow-sm">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h1 class="display-5 fw-bold mb-1"><%= user.name %>'<%= locals.t ? t("s Profile") : "s Profile" %></h1>
+        <p class="lead mb-0"><%= locals.t ? t("Manage your game experience") : "Manage your game experience" %></p>
+      </div>
+      <a href="/logout" class="btn btn-light text-primary rounded-pill px-4 py-2">
+        <i class="fas fa-sign-out-alt me-2"></i> <%= locals.t ? t("Logout") : "Logout" %>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- User Stats Section -->
+  <div class="col-lg-4 mb-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-primary text-white py-3">
+        <h3 class="card-title mb-0"><i class="fas fa-chart-bar me-2"></i><%= locals.t ? t("Gaming Statistics") : "Gaming Statistics" %></h3>
+      </div>
+      <div class="card-body">
+        <div class="user-stat-item p-3 mb-3 bg-light rounded">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0"><i class="fas fa-clock text-primary me-2"></i><%= locals.t ? t("Total Play Time") : "Total Play Time" %></h5>
+            <span class="badge bg-primary rounded-pill px-3 py-2" id="totalPlayTimeDisplay">
+              <% 
+                // Use the single source of truth - seconds
+                const totalPlaySeconds = user.totalPlayTimeSeconds || (user.totalPlayTime * 3600);
+                let formattedPlayTime = '';
+                if (totalPlaySeconds > 0) {
+                  const hours = Math.floor(totalPlaySeconds / 3600);
+                  const minutes = Math.floor((totalPlaySeconds % 3600) / 60);
+                  const seconds = totalPlaySeconds % 60;
+                  
+                  if (hours > 0) {
+                    formattedPlayTime = `${hours}h ${minutes}m ${seconds}s`;
+                  } else if (minutes > 0) {
+                    formattedPlayTime = `${minutes}m ${seconds}s`;
+                  } else {
+                    formattedPlayTime = `${seconds}s`;
+                  }
+                } else {
+                  formattedPlayTime = "0s";
+                }
+              %>
+              <%= formattedPlayTime %>
+            </span>
+          </div>
+          <div class="progress" style="height: 8px;">
+            <div class="progress-bar bg-primary" role="progressbar" style="width: <%= Math.min((totalPlaySeconds / 3600), 100) %>%"></div>
+          </div>
+        </div>
+
+        <div class="user-stat-item p-3 mb-3 bg-light rounded">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0"><i class="fas fa-star text-warning me-2"></i><%= locals.t ? t("Average Rating") : "Average Rating" %></h5>
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+              <% if (user.avgRatings > 0) { %>
+                <%= user.avgRatings.toFixed(1) %> / 5
+              <% } else { %>
+                <%= locals.t ? t("No ratings") : "No ratings" %>
+              <% } %>
+            </span>
+          </div>
+          <% if (user.avgRatings > 0) { %>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-warning" role="progressbar" style="width: <%= (user.avgRatings / 5) * 100 %>%"></div>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="user-stat-item p-3 bg-light rounded" id="mostPlayedGameContainer">
+          <h5 class="mb-3"><i class="fas fa-trophy text-success me-2"></i><%= locals.t ? t("Most Played Game") : "Most Played Game" %></h5>
+          <% if (user.mostPlayedGame) { %>
+            <div class="d-flex align-items-center" id="mostPlayedGameContent">
+              <div class="flex-shrink-0">
+                <img src="<%= user.mostPlayedGame.photo %>" alt="<%= user.mostPlayedGame.name %>" class="rounded-3" style="width: 100px; height: 100px; object-fit: cover;" id="mostPlayedGameImage">
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h5 class="fw-bold mb-1" id="mostPlayedGameName"><%= user.mostPlayedGame.name %></h5>
+                <p class="mb-1" id="mostPlayedGameTime">
+                  <i class="fas fa-clock text-secondary"></i>
+                  <span id="mostPlayedGameTimeValue">
+                  <% 
+                    const mostPlayedGameStat = user.gameStats.find(stat => stat.game && stat.game._id && user.mostPlayedGame && user.mostPlayedGame._id && stat.game._id.toString() === user.mostPlayedGame._id.toString());
+                    if (mostPlayedGameStat) {
+                      // Use single source of truth for play time - always prefer playTimeSeconds
+                      const totalSeconds = mostPlayedGameStat.playTimeSeconds || (mostPlayedGameStat.playTime * 3600);
+                      const hours = Math.floor(totalSeconds / 3600);
+                      const minutes = Math.floor((totalSeconds % 3600) / 60);
+                      const seconds = totalSeconds % 60;
+                      let timeStr = '';
+                      if (hours > 0) {
+                        timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                      } else if (minutes > 0) {
+                        timeStr = `${minutes}m ${seconds}s`;
+                      } else {
+                        timeStr = `${seconds}s`;
+                      }
+                      %>
+                      <%= timeStr %>
+                      <%
+                    } else { %>
+                      0s
+                    <% }
+                  %>
+                  </span>
+                </p>
+                <a href="/games/<%= user.mostPlayedGame._id %>" class="btn btn-sm btn-primary mt-1" id="mostPlayedGameLink">
+                  <i class="fas fa-gamepad me-1"></i> <%= locals.t ? t("View Game") : "View Game" %>
+                </a>
+              </div>
+            </div>
+          <% } else { %>
+            <div class="text-center py-4" id="noMostPlayedGameMessage">
+              <i class="fas fa-gamepad text-muted mb-3" style="font-size: 2.5rem;"></i>
+              <p class="text-muted mb-0"><%= locals.t ? t("No games played yet") : "No games played yet" %></p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Actions Section -->
+  <div class="col-lg-8 mb-4">
+    <!-- Developer Add Game Button (Placed at the top for better visibility) -->
+    <% if (currentUser && (currentUser.isDeveloper || currentUser.isAdmin)) { %>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-danger text-white py-3">
+          <h3 class="card-title mb-0"><i class="fas fa-plus-circle me-2"></i><%= locals.t ? t("Developer Controls") : "Developer Controls" %></h3>
+        </div>
+        <div class="card-body p-4 text-center">
+          <div class="d-grid">
+            <a href="/games/new" class="btn btn-lg btn-danger">
+              <i class="fas fa-plus-circle me-2"></i> <%= locals.t ? t("Add Game") : "Add Game" %>
+            </a>
+          </div>
+        </div>
+      </div>
+    <% } %>
+    
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-success text-white py-3">
+        <h3 class="card-title mb-0"><i class="fas fa-gamepad me-2"></i><%= locals.t ? t("Game Actions") : "Game Actions" %></h3>
+      </div>
+      <div class="card-body">
+        <ul class="nav nav-pills nav-fill mb-3" id="userActionTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="play-tab" data-bs-toggle="tab" data-bs-target="#play" type="button" role="tab">
+              <i class="fas fa-play me-1"></i> <%= locals.t ? t("Play Game") : "Play Game" %>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="rate-tab" data-bs-toggle="tab" data-bs-target="#rate" type="button" role="tab">
+              <i class="fas fa-star me-1"></i> <%= locals.t ? t("Rate Game") : "Rate Game" %>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comment-tab" data-bs-toggle="tab" data-bs-target="#comment" type="button" role="tab">
+              <i class="fas fa-comment me-1"></i> <%= locals.t ? t("Comment") : "Comment" %>
+            </button>
+          </li>
+        </ul>
+        
+        <div class="tab-content p-4 border rounded bg-light" id="userActionTabsContent">
+          <!-- Play Game Tab -->
+          <div class="tab-pane fade show active" id="play" role="tabpanel">
+            <h4 class="mb-4 border-bottom pb-3"><i class="fas fa-play-circle me-2 text-success"></i><%= locals.t ? t("Choose a Game to Play") : "Choose a Game to Play" %></h4>
+            <div class="row">
+              <div class="col-md-12">
+                <label for="gameId" class="form-label"><%= locals.t ? t("Select Game") : "Select Game" %></label>
+                <select class="form-select form-select-lg shadow-sm mb-4" id="gameId">
+                  <option value=""><%= locals.t ? t("-- Choose a game to play --") : "-- Choose a game to play --" %></option>
+                  <% games.forEach(game => { %>
+                    <option value="<%= game._id %>"><%= game.name %></option>
+                  <% }); %>
+                </select>
+              </div>
+              
+              <div class="col-12 mt-2">
+                <button id="playGameBtn" class="btn btn-success btn-lg px-5 disabled">
+                  <i class="fas fa-play-circle me-2"></i> <%= locals.t ? t("Play Selected Game") : "Play Selected Game" %>
+                </button>
+              </div>
+              
+              <div class="col-12 mt-4">
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <%= locals.t ? t("When you play a game, a timer will track your play time automatically. Play time is used to unlock rating and commenting features.") : "When you play a game, a timer will track your play time automatically. Play time is used to unlock rating and commenting features." %>
+                </div>
+              </div>
+            </div>
+            
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const gameSelect = document.getElementById('gameId');
+                const playButton = document.getElementById('playGameBtn');
+                
+                gameSelect.addEventListener('change', function() {
+                  if (this.value) {
+                    playButton.classList.remove('disabled');
+                    playButton.addEventListener('click', function() {
+                      window.location.href = '/games/' + gameSelect.value + '/play';
+                    });
+                  } else {
+                    playButton.classList.add('disabled');
+                  }
+                });
+              });
+            </script>
+          </div>
+          
+          <!-- Rate Game Tab -->
+          <div class="tab-pane fade" id="rate" role="tabpanel">
+            <h4 class="mb-4 border-bottom pb-3"><i class="fas fa-star me-2 text-warning"></i><%= locals.t ? t("Rate a Game") : "Rate a Game" %></h4>
+            <% if (ratableGames && ratableGames.length > 0) { %>
+              <form action="/users/<%= user._id %>/rate" method="POST" class="row g-3">
+                <div class="col-md-8">
+                  <label for="gameIdRate" class="form-label"><%= locals.t ? t("Select Game") : "Select Game" %></label>
+                  <select class="form-select form-select-lg shadow-sm" id="gameIdRate" name="gameId" required>
+                    <option value=""><%= locals.t ? t("-- Choose a game to rate --") : "-- Choose a game to rate --" %></option>
+                    <% ratableGames.forEach(game => { %>
+                      <option value="<%= game._id %>"><%= game.name %></option>
+                    <% }); %>
+                  </select>
+                </div>
+                
+                <div class="col-md-12 mt-3">
+                  <label class="form-label d-block"><%= locals.t ? t("Your Rating") : "Your Rating" %></label>
+                  <div class="rating-stars">
+                    <div class="rating-star-group" style="font-size: 2rem;">
+                      <% for (let i = 1; i <= 5; i++) { %>
+                        <div class="form-check form-check-inline">
+                          <input class="form-check-input d-none" type="radio" name="rating" id="rating<%= i %>" value="<%= i %>" <%= i === 1 ? 'required' : '' %>>
+                          <label class="form-check-label" for="rating<%= i %>">
+                            <i class="far fa-star text-warning rating-star" data-rating="<%= i %>"></i>
+                          </label>
+                        </div>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-12 mt-4">
+                  <button type="submit" class="btn btn-warning btn-lg px-5">
+                    <i class="fas fa-paper-plane me-2"></i> <%= locals.t ? t("Submit Rating") : "Submit Rating" %>
+                  </button>
+                </div>
+              </form>
+
+              <!-- Star Rating JavaScript -->
+              <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                  const stars = document.querySelectorAll('.rating-star');
+                  stars.forEach(star => {
+                    star.addEventListener('mouseover', function() {
+                      const rating = parseInt(this.dataset.rating);
+                      updateStars(stars, rating, false);
+                    });
+                    
+                    star.addEventListener('click', function() {
+                      const rating = parseInt(this.dataset.rating);
+                      updateStars(stars, rating, true);
+                      document.getElementById('rating' + rating).checked = true;
+                    });
+                  });
+                  
+                  const starContainer = document.querySelector('.rating-star-group');
+                  starContainer.addEventListener('mouseout', function() {
+                    const checkedRadio = document.querySelector('input[name="rating"]:checked');
+                    const rating = checkedRadio ? parseInt(checkedRadio.value) : 0;
+                    updateStars(stars, rating, true);
+                  });
+
+                  function updateStars(stars, rating, clicked) {
+                    stars.forEach(star => {
+                      const starRating = parseInt(star.dataset.rating);
+                      if (starRating <= rating) {
+                        star.classList.remove('far');
+                        star.classList.add('fas');
+                      } else {
+                        star.classList.remove('fas');
+                        star.classList.add('far');
+                      }
+                    });
+                  }
+                });
+              </script>
+            <% } else { %>
+              <div class="alert alert-info p-4">
+                <div class="d-flex">
+                  <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle fa-2x text-info"></i>
+                  </div>
+                  <div class="flex-grow-1 ms-3">
+                    <h5 class="alert-heading"><%= locals.t ? t("No Games to Rate") : "No Games to Rate" %></h5>
+                    <p class="mb-0"><%= locals.t ? t("You need to play a game for at least 10 seconds before you can rate it.") : "You need to play a game for at least 10 seconds before you can rate it." %></p>
+                    <p class="mb-0"><%= locals.t ? t("Also, games with disabled ratings cannot be rated.") : "Also, games with disabled ratings cannot be rated." %></p>
+                  </div>
+                </div>
+              </div>
+            <% } %>
+          </div>
+          
+          <!-- Comment on Game Tab -->
+          <div class="tab-pane fade" id="comment" role="tabpanel">
+            <h4 class="mb-4 border-bottom pb-3"><i class="fas fa-comment-dots me-2 text-info"></i><%= locals.t ? t("Comment on a Game") : "Comment on a Game" %></h4>
+            <% if (commentableGames && commentableGames.length > 0) { %>
+              <form action="/users/<%= user._id %>/comment" method="POST" class="row g-3">
+                <div class="col-md-12">
+                  <label for="gameIdComment" class="form-label"><%= locals.t ? t("Select Game") : "Select Game" %></label>
+                  <select class="form-select form-select-lg shadow-sm mb-3" id="gameIdComment" name="gameId" required>
+                    <option value=""><%= locals.t ? t("-- Choose a game to comment on --") : "-- Choose a game to comment on --" %></option>
+                    <% commentableGames.forEach(game => { %>
+                      <option value="<%= game._id %>"><%= game.name %></option>
+                    <% }); %>
+                  </select>
+                </div>
+                <div class="col-md-12">
+                  <label for="comment" class="form-label"><%= locals.t ? t("Your Comment") : "Your Comment" %></label>
+                  <textarea class="form-control shadow-sm" id="comment" name="comment" rows="4" required placeholder="<%= locals.t ? t("Share your thoughts about this game...") : "Share your thoughts about this game..." %>"></textarea>
+                </div>
+                <div class="col-12 mt-4">
+                  <button type="submit" class="btn btn-info btn-lg text-white px-5">
+                    <i class="fas fa-paper-plane me-2"></i> <%= locals.t ? t("Post Comment") : "Post Comment" %>
+                  </button>
+                </div>
+              </form>
+            <% } else { %>
+              <div class="alert alert-info p-4">
+                <div class="d-flex">
+                  <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle fa-2x text-info"></i>
+                  </div>
+                  <div class="flex-grow-1 ms-3">
+                    <h5 class="alert-heading"><%= locals.t ? t("No Games to Comment On") : "No Games to Comment On" %></h5>
+                    <p class="mb-0"><%= locals.t ? t("You need to play a game for at least 10 seconds before you can comment on it.") : "You need to play a game for at least 10 seconds before you can comment on it." %></p>
+                    <p class="mb-0"><%= locals.t ? t("Also, games with disabled comments cannot be commented on.") : "Also, games with disabled comments cannot be commented on." %></p>
+                  </div>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Developer Game Management Controls -->
+    <% if (currentUser && (currentUser.isDeveloper || currentUser.isAdmin)) { %>
+      <div class="card border-0 shadow-sm mt-4 mb-4">
+        <div class="card-header bg-success text-white py-3">
+          <h3 class="card-title mb-0"><i class="fas fa-code me-2"></i><%= locals.t ? t("Developer Tools") : "Developer Tools" %></h3>
+        </div>
+        <div class="card-body p-4 text-center">
+          <h4 class="mb-3"><%= locals.t ? t("Game Management") : "Game Management" %></h4>
+          <p class="mb-4 lead">
+            <% if (currentUser && currentUser.isDeveloper && !currentUser.isAdmin) { %>
+              <%= locals.t ? t("As a game developer, you can create and manage games on our platform.") : "As a game developer, you can create and manage games on our platform." %>
+            <% } else { %>
+              <%= locals.t ? t("You have access to game management tools and can create new games.") : "You have access to game management tools and can create new games." %>
+            <% } %>
+          </p>
+          <div class="d-grid gap-2">
+            <a href="/games/manage" class="btn btn-lg btn-success">
+              <i class="fas fa-plus-circle me-2"></i> <%= locals.t ? t("Manage & Add Games") : "Manage & Add Games" %>
+            </a>
+          </div>
+        </div>
+      </div>
+    <% } %>
+    
+    <!-- Browse Games Button -->
+    <div class="d-grid gap-2 mt-3">
+      <a href="/games" class="btn btn-lg btn-primary">
+        <i class="fas fa-gamepad me-2"></i> <%= locals.t ? t("Browse All Games") : "Browse All Games" %>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- User Comments Section -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-info text-white py-3">
+        <h3 class="card-title mb-0"><i class="fas fa-comments me-2"></i>My Game Comments</h3>
+      </div>
+      <div class="card-body p-0">
+        <% if (comments && comments.length > 0) { %>
+          <div class="list-group list-group-flush">
+            <% comments.forEach(comment => { %>
+              <div class="list-group-item p-4">
+                <div class="d-flex">
+                  <div class="flex-shrink-0">
+                    <img src="<%= comment.game.photo %>" alt="<%= comment.game.name %>" class="rounded-3 me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h5 class="fw-bold mb-0"><%= comment.game.name %></h5>
+                      <span class="badge bg-light text-dark px-3 py-2">
+                        <i class="fas fa-clock text-secondary me-1"></i> 
+                        <% 
+                          // Calculate total seconds (combining hours and additional seconds)
+                          const totalSeconds = (comment.playTime * 3600) + (comment.playTimeSeconds || 0);
+                          const hours = Math.floor(totalSeconds / 3600);
+                          const minutes = Math.floor((totalSeconds % 3600) / 60);
+                          const seconds = totalSeconds % 60;
+                          
+                          let timeStr = '';
+                          if (hours > 0) {
+                            timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                          } else if (minutes > 0) {
+                            timeStr = `${minutes}m ${seconds}s`;
+                          } else {
+                            timeStr = `${seconds}s`;
+                          }
+                        %>
+                        <%= timeStr %> total played
+                      </span>
+                    </div>
+                    <p class="mb-1 lead">"<%= comment.comment %>"</p>
+                    <div class="mt-2">
+                      <a href="/games/<%= comment.game._id %>" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-1"></i> View Game
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="fas fa-comments text-muted mb-3" style="font-size: 3rem;"></i>
+            <h4 class="text-muted">No Comments Yet</h4>
+            <p class="text-muted mb-0">You haven't commented on any games. Share your thoughts!</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden input with all game stats -->
+<input type="hidden" id="fullGameStats" value='<%= fullGameStats %>' />
+
+<script>
+  // Execute once DOM is fully loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    // Format time function for consistent display
+    function formatTime(totalSeconds) {
+      if (!totalSeconds) return '0s';
+      
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      
+      let timeStr = '';
+      if (hours > 0) {
+        timeStr = `${hours}h ${minutes}m ${seconds}s`;
+      } else if (minutes > 0) {
+        timeStr = `${minutes}m ${seconds}s`;
+      } else {
+        timeStr = `${seconds}s`;
+      }
+      return timeStr;
+    }
+    
+    // Store original most played game data
+    const originalMostPlayedGame = {
+      exists: <%= user.mostPlayedGame ? 'true' : 'false' %>,
+      <% if (user.mostPlayedGame) { %>
+      id: '<%= user.mostPlayedGame._id %>',
+      name: '<%= user.mostPlayedGame.name %>',
+      image: '<%= user.mostPlayedGame.photo %>',
+      <% } %>
+      timeValue: document.getElementById('mostPlayedGameTimeValue') ? document.getElementById('mostPlayedGameTimeValue').textContent.trim() : '0s'
+    };
+    
+    // Find true most played game based on seconds played
+    const findRealMostPlayedGame = () => {
+      // First, try to get full game stats from hidden input
+      try {
+        const fullGameStatsInput = document.getElementById('fullGameStats');
+        if (fullGameStatsInput && fullGameStatsInput.value) {
+          const gameStats = JSON.parse(fullGameStatsInput.value);
+          if (gameStats && gameStats.length > 0) {
+            console.log('Found complete game stats from data:', gameStats.length, 'games');
+            
+            // Sort by total seconds (highest first)
+            gameStats.sort((a, b) => b.totalSeconds - a.totalSeconds);
+            console.log("Top 3 most played games:", gameStats.slice(0, 3));
+            
+            // Calculate total play time across all games
+            const totalPlayTime = gameStats.reduce((total, game) => total + game.totalSeconds, 0);
+            updateTotalPlayTimeDisplay(totalPlayTime);
+            
+            // Return the most played game
+            return gameStats[0];
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing full game stats:', e);
+      }
+      
+      // Fallback: Get game stats from comments section
+      // This is a fallback in case the full data wasn't loaded
+      const commentGameStats = [];
+      
+      // Get all game stats from comments section
+      document.querySelectorAll('.list-group-item').forEach(commentItem => {
+        try {
+          const gameName = commentItem.querySelector('.fw-bold').textContent.trim();
+          const gameId = commentItem.querySelector('a').href.split('/').pop();
+          const gameImage = commentItem.querySelector('img').src;
+          
+          // Get play time
+          let seconds = 0;
+          const timeText = commentItem.querySelector('.badge').textContent.trim();
+          
+          if (timeText.includes('h')) {
+            const hoursPart = parseInt(timeText.match(/(\d+)h/)?.[1] || '0');
+            const minutesPart = parseInt(timeText.match(/(\d+)m/)?.[1] || '0');
+            const secondsPart = parseInt(timeText.match(/(\d+)s/)?.[1] || '0');
+            seconds = (hoursPart * 3600) + (minutesPart * 60) + secondsPart;
+          } else if (timeText.includes('m')) {
+            const minutesPart = parseInt(timeText.match(/(\d+)m/)?.[1] || '0');
+            const secondsPart = parseInt(timeText.match(/(\d+)s/)?.[1] || '0');
+            seconds = (minutesPart * 60) + secondsPart;
+          } else if (timeText.includes('s')) {
+            seconds = parseInt(timeText.match(/(\d+)s/)?.[1] || '0');
+          } else if (timeText.includes('hours')) {
+            seconds = parseInt(timeText.match(/(\d+) hours/)?.[1] || '0') * 3600;
+          }
+          
+          console.log(`Game found in comments: ${gameName}, Time: ${seconds}s, Image: ${gameImage}`);
+          
+          commentGameStats.push({
+            name: gameName,
+            id: gameId,
+            image: gameImage,
+            totalSeconds: seconds
+          });
+        } catch (error) {
+          console.error("Error processing comment game stat:", error);
+        }
+      });
+      
+      // If we have game stats from comments, find the one with the most seconds
+      if (commentGameStats.length > 0) {
+        // Sort by seconds (highest first)
+        commentGameStats.sort((a, b) => b.totalSeconds - a.totalSeconds);
+        
+        // Calculate total play time across all games
+        const totalPlayTime = commentGameStats.reduce((total, game) => total + game.totalSeconds, 0);
+        updateTotalPlayTimeDisplay(totalPlayTime);
+        
+        return commentGameStats[0]; // Most played game
+      }
+      
+      // If we couldn't find any game stats, use the original data from server render
+      if (originalMostPlayedGame.exists) {
+        return {
+          name: originalMostPlayedGame.name,
+          id: originalMostPlayedGame.id,
+          image: originalMostPlayedGame.image,
+          totalSeconds: parseTimeString(originalMostPlayedGame.timeValue)
+        };
+      }
+      
+      return null;
+    };
+    
+    // Parse time string like "2h 30m 15s" into seconds
+    function parseTimeString(timeStr) {
+      if (!timeStr) return 0;
+      
+      let totalSeconds = 0;
+      
+      if (timeStr.includes('h')) {
+        const hours = parseInt(timeStr.match(/(\d+)h/)?.[1] || '0');
+        totalSeconds += hours * 3600;
+      }
+      
+      if (timeStr.includes('m')) {
+        const minutes = parseInt(timeStr.match(/(\d+)m/)?.[1] || '0');
+        totalSeconds += minutes * 60;
+      }
+      
+      if (timeStr.includes('s')) {
+        const seconds = parseInt(timeStr.match(/(\d+)s/)?.[1] || '0');
+        totalSeconds += seconds;
+      }
+      
+      return totalSeconds;
+    }
+    
+    // Function to update total play time display
+    function updateTotalPlayTimeDisplay(totalSeconds) {
+      const totalPlayTimeDisplay = document.getElementById('totalPlayTimeDisplay');
+      if (totalPlayTimeDisplay && totalSeconds > 0) {
+        totalPlayTimeDisplay.textContent = formatTime(totalSeconds);
+        
+        // Update progress bar as well
+        const progressBar = document.querySelector('.progress-bar.bg-primary');
+        if (progressBar) {
+          const progressPercent = Math.min((totalSeconds / 3600), 100);
+          progressBar.style.width = `${progressPercent}%`;
+        }
+      }
+    }
+    
+    // Update the most played game section
+    const updateMostPlayedGameSection = () => {
+      const mostPlayedGame = findRealMostPlayedGame();
+      
+      if (mostPlayedGame && mostPlayedGame.id && mostPlayedGame.name && mostPlayedGame.image) {
+        console.log('Client detected most played game:', mostPlayedGame.name, '(', mostPlayedGame.totalSeconds, 'seconds)');
+        
+        // Get elements within the container
+        const container = document.getElementById('mostPlayedGameContainer');
+        const contentElement = document.getElementById('mostPlayedGameContent');
+        const noGamesMessage = document.getElementById('noMostPlayedGameMessage');
+        const nameElement = document.getElementById('mostPlayedGameName');
+        const timeValueElement = document.getElementById('mostPlayedGameTimeValue');
+        const imageElement = document.getElementById('mostPlayedGameImage');
+        const linkElement = document.getElementById('mostPlayedGameLink');
+        
+        if (container) {
+          // If container exists but no content, create full content
+          if (!contentElement && noGamesMessage) {
+            // Replace the "no games played" message with actual content
+            noGamesMessage.remove();
+            
+            // Create game content
+            const gameContent = document.createElement('div');
+            gameContent.id = 'mostPlayedGameContent';
+            gameContent.className = 'd-flex align-items-center';
+            gameContent.innerHTML = `
+              <div class="flex-shrink-0">
+                <img src="${mostPlayedGame.image}" alt="${mostPlayedGame.name}" class="rounded-3" style="width: 100px; height: 100px; object-fit: cover;" id="mostPlayedGameImage">
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h5 class="fw-bold mb-1" id="mostPlayedGameName">${mostPlayedGame.name}</h5>
+                <p class="mb-1" id="mostPlayedGameTime">
+                  <i class="fas fa-clock text-secondary"></i>
+                  <span id="mostPlayedGameTimeValue">${formatTime(mostPlayedGame.totalSeconds)}</span>
+                </p>
+                <a href="/games/${mostPlayedGame.id}" class="btn btn-sm btn-primary mt-1" id="mostPlayedGameLink">
+                  <i class="fas fa-gamepad me-1"></i> ${locals.t ? t("View Game") : "View Game"}
+                </a>
+              </div>
+            `;
+            container.appendChild(gameContent);
+          }
+          // Otherwise just update existing elements
+          else if (contentElement) {
+            if (nameElement) nameElement.textContent = mostPlayedGame.name;
+            if (timeValueElement) timeValueElement.textContent = formatTime(mostPlayedGame.totalSeconds);
+            if (imageElement) imageElement.src = mostPlayedGame.image;
+            if (linkElement) linkElement.href = `/games/${mostPlayedGame.id}`;
+          }
+        }
+      }
+    };
+    
+    // Run the update for most played game - use small delay to ensure elements are loaded
+    setTimeout(updateMostPlayedGameSection, 500);
+    
+    // Ensure tabs remain visible and properly set up
+    const preserveSelectedTab = () => {
+      // Check if there's a selected tab in the URL hash
+      const hash = window.location.hash;
+      if (hash) {
+        // Try to select the tab based on the hash
+        const tabId = hash.replace('#', '');
+        const tabEl = document.getElementById(tabId + '-tab');
+        if (tabEl) {
+          tabEl.click(); // Programmatically click the tab
+        }
+      }
+      
+      // Ensure the Rate Game tab content stays visible if it's active
+      const rateTab = document.getElementById('rate-tab');
+      const rateTabContent = document.getElementById('rate');
+      
+      if (rateTab && rateTab.classList.contains('active')) {
+        rateTabContent.classList.add('show', 'active');
+      }
+      
+      // Add event listeners to tabs to update URL hash when clicked
+      document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(event) {
+          const targetId = event.target.getAttribute('data-bs-target').replace('#', '');
+          window.location.hash = targetId;
+        });
+      });
+    };
+    
+    // Run the tab preservation after a slight delay
+    setTimeout(preserveSelectedTab, 600);
+  });
+</script>
+
+<style>
+  .rating-star {
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .rating-star:hover {
+    transform: scale(1.2);
+  }
+</style>
+
+<% if (currentUser && (currentUser.isDeveloper || currentUser.isAdmin)) { %>
+<!-- Add Game Modal for Developers -->
+<div class="modal fade" id="addGameModal" tabindex="-1" aria-labelledby="addGameModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addGameModalLabel"><i class="fas fa-plus-circle me-2"></i><%= locals.t ? t("Add New Game") : "Add New Game" %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="/games">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="name" class="form-label"><%= locals.t ? t("Game Name") : "Game Name" %></label>
+            <input type="text" class="form-control" id="name" name="name" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="genres" class="form-label"><%= locals.t ? t("Genres (comma-separated)") : "Genres (comma-separated)" %></label>
+            <input type="text" class="form-control" id="genres" name="genres" placeholder="Action, Adventure, RPG" required>
+            <div class="form-text"><%= locals.t ? t("Enter between 1-5 genres, separated by commas") : "Enter between 1-5 genres, separated by commas" %></div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="photo" class="form-label"><%= locals.t ? t("Game Cover Image URL") : "Game Cover Image URL" %></label>
+            <input type="url" class="form-control" id="photo" name="photo" required>
+            <div class="form-text"><%= locals.t ? t("Enter a URL for the game cover image") : "Enter a URL for the game cover image" %></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="optional1" class="form-label"><%= locals.t ? t("Optional Field 1") : "Optional Field 1" %></label>
+                <input type="text" class="form-control" id="optional1" name="optional1">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="optional2" class="form-label"><%= locals.t ? t("Optional Field 2") : "Optional Field 2" %></label>
+                <input type="text" class="form-control" id="optional2" name="optional2">
+              </div>
+            </div>
+          </div>
+          
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <% if (currentUser && currentUser.isDeveloper && !currentUser.isAdmin) { %>
+              <%= locals.t ? t("As a developer, you will automatically be set as the developer of this game.") : "As a developer, you will automatically be set as the developer of this game." %>
+            <% } else { %>
+              <%= locals.t ? t("The game will be added to the platform for all users to play.") : "The game will be added to the platform for all users to play." %>
+            <% } %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><%= locals.t ? t("Cancel") : "Cancel" %></button>
+          <button type="submit" class="btn btn-success"><%= locals.t ? t("Add Game") : "Add Game" %></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<% } %>

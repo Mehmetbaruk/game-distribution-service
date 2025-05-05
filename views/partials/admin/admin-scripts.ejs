@@ -1,0 +1,1144 @@
+<!-- Admin Dashboard Scripts -->
+<script type="module">
+// Import the table sorter module
+import { initializeTableSorter } from '/js/modules/tableSorter.js';
+
+// Initialize table sorters when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize table sorters for the admin dashboard tables
+  initializeTableSorter('#admin-users-table');
+  initializeTableSorter('#admin-games-table');
+});
+</script>
+
+<script>
+// Sorting script for admin tables
+document.addEventListener('DOMContentLoaded', function() {
+  // Get all tables with sortable headers
+  const tables = document.querySelectorAll('table');
+  
+  tables.forEach(table => {
+    const headers = table.querySelectorAll('th.sortable');
+    if (headers.length === 0) return;
+    
+    headers.forEach(header => {
+      header.addEventListener('click', function() {
+        const sortBy = this.getAttribute('data-sort');
+        const tbody = this.closest('table').querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        // Toggle sort direction
+        const isAsc = !this.classList.contains('asc');
+        
+        // Reset all headers
+        headers.forEach(h => {
+          h.classList.remove('asc', 'desc');
+          h.querySelector('i.fas').className = 'fas fa-sort';
+        });
+        
+        // Set active header style
+        this.classList.add(isAsc ? 'asc' : 'desc');
+        this.querySelector('i.fas').className = isAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
+        
+        // Sort rows based on column type and direction
+        rows.sort((a, b) => {
+          let valA, valB;
+          
+          // Get the correct cell based on the header index
+          const headerIndex = Array.from(this.parentNode.children).indexOf(this);
+          const cellA = a.children[headerIndex];
+          const cellB = b.children[headerIndex];
+          
+          // Extract values based on column type
+          switch(sortBy) {
+            case 'name':
+              valA = cellA.textContent.trim().toLowerCase();
+              valB = cellB.textContent.trim().toLowerCase();
+              break;
+              
+            case 'playtime':
+              // Check for data-seconds attribute first (our new solution)
+              if (cellA.hasAttribute('data-seconds') && cellB.hasAttribute('data-seconds')) {
+                valA = parseInt(cellA.getAttribute('data-seconds'), 10);
+                valB = parseInt(cellB.getAttribute('data-seconds'), 10);
+              } else {
+                // Legacy fallback - Extract numeric value from "X hrs" or formatted time
+                valA = parseFloat(cellA.textContent.trim()) || 0;
+                valB = parseFloat(cellB.textContent.trim()) || 0;
+              }
+              break;
+              
+            case 'rating':
+              // Extract numeric rating value
+              valA = cellA.textContent.includes('No ratings') ? 0 : 
+                    parseFloat(cellA.textContent.replace(/[^\d.-]/g, '')) || 0;
+              valB = cellB.textContent.includes('No ratings') ? 0 : 
+                    parseFloat(cellB.textContent.replace(/[^\d.-]/g, '')) || 0;
+              break;
+              
+            case 'roles':
+              // Roles priority: Admin > Developer > User
+              valA = cellA.textContent.includes('Admin') ? 3 : 
+                    (cellA.textContent.includes('Developer') ? 2 : 1);
+              valB = cellB.textContent.includes('Admin') ? 3 : 
+                    (cellB.textContent.includes('Developer') ? 2 : 1);
+              break;
+              
+            case 'created':
+              // Parse dates
+              valA = new Date(cellA.textContent.trim());
+              valB = new Date(cellB.textContent.trim());
+              break;
+              
+            case 'developer':
+              // Developer name
+              valA = cellA.textContent.trim().toLowerCase();
+              valB = cellB.textContent.trim().toLowerCase();
+              break;
+              
+            case 'game':
+              // Game name (extracting from the div structure)
+              const gameNameA = cellA.querySelector('.fw-medium')?.textContent.trim().toLowerCase() || '';
+              const gameNameB = cellB.querySelector('.fw-medium')?.textContent.trim().toLowerCase() || '';
+              valA = gameNameA;
+              valB = gameNameB;
+              break;
+              
+            case 'status':
+              // Status priority: Active > Disabled
+              valA = cellA.textContent.includes('Active') ? 2 : 1;
+              valB = cellB.textContent.includes('Active') ? 2 : 1;
+              break;
+              
+            case 'num-ratings':
+              // Number of ratings
+              valA = parseInt(cellA.textContent.trim()) || 0;
+              valB = parseInt(cellB.textContent.trim()) || 0;
+              break;
+              
+            case 'num-games':
+              // Number of games
+              valA = parseInt(cellA.textContent.trim()) || 0;
+              valB = parseInt(cellB.textContent.trim()) || 0;
+              break;
+              
+            default:
+              valA = cellA.textContent.trim().toLowerCase();
+              valB = cellB.textContent.trim().toLowerCase();
+          }
+          
+          // Compare values based on sort direction
+          if (valA === valB) return 0;
+          
+          if (valA instanceof Date && valB instanceof Date) {
+            return isAsc ? valA - valB : valB - valA;
+          } else if (typeof valA === 'number' && typeof valB === 'number') {
+            return isAsc ? valA - valB : valB - valA;
+          } else {
+            return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+          }
+        });
+        
+        // Reorder the rows
+        rows.forEach(row => tbody.appendChild(row));
+      });
+    });
+  });
+});
+
+// AI Assistant Admin Scripts
+document.addEventListener('DOMContentLoaded', function() {
+  // Only initialize if we're on the admin page with AI assistant tab
+  if (!document.getElementById('ai-assistant-tab')) return;
+  
+  // AI Assistant variables
+  let aiStatus = {
+    connected: false,
+    apiKey: "",
+    apiKeyMasked: "",
+    model: "",
+    active: false,
+    lastRequest: null,
+    totalRequests: 0,
+    logs: []
+  };
+  
+  // Function to update the AI status display
+  function updateAIStatusDisplay() {
+    document.getElementById('ai-connection-status').textContent = aiStatus.connected ? 'Connected' : 'Disconnected';
+    document.getElementById('ai-connection-status').className = `badge ${aiStatus.connected ? 'bg-success' : 'bg-danger'}`;
+    
+    document.getElementById('ai-api-key').textContent = document.getElementById('show-api-key').dataset.showing === 'true' 
+      ? aiStatus.apiKey 
+      : aiStatus.apiKeyMasked;
+    
+    document.getElementById('ai-model').textContent = aiStatus.model;
+    
+    document.getElementById('ai-active-status').textContent = aiStatus.active ? 'Active' : 'Inactive';
+    document.getElementById('ai-active-status').className = `badge ${aiStatus.active ? 'bg-success' : 'bg-warning'}`;
+    
+    document.getElementById('ai-last-request').textContent = aiStatus.lastRequest 
+      ? new Date(aiStatus.lastRequest).toLocaleString() 
+      : 'Never';
+    
+    document.getElementById('ai-total-requests').textContent = aiStatus.totalRequests.toString();
+  }
+  
+  // Function to update the logs table
+  function updateLogsTable(filter = 'all') {
+    const logsTable = document.getElementById('ai-logs-table');
+    
+    // Show loading state
+    logsTable.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+          <span>Loading logs...</span>
+        </td>
+      </tr>
+    `;
+    
+    // First fetch logs from server
+    fetch('/assistant/logs' + (filter !== 'all' ? `?filter=${filter}` : ''))
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch logs');
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          // Combine system logs and memory logs
+          // Prioritize system logs from MongoDB for persistent storage
+          const systemLogs = data.systemLogs || [];
+          const memoryLogs = data.logs || [];
+          
+          // Convert system logs to match memory logs format for display
+          const formattedSystemLogs = systemLogs.map(log => {
+            return {
+              timestamp: log.timestamp,
+              event: log.action.includes('response') ? 'chat_response' : 
+                     log.action.includes('request') ? 'chat_request' : 
+                     log.action.includes('error') ? 'chat_error' : log.action,
+              userRole: log.category === 'admin' ? 'admin' : 'user',
+              userId: log.userId || 'anonymous',
+              message: log.message || (log.details && log.details.message) || '',
+              status: log.level === 'error' ? 'error' : 'success'
+            };
+          });
+          
+          // Combine both types of logs and sort by timestamp
+          let combinedLogs = [...formattedSystemLogs, ...memoryLogs].sort((a, b) => {
+            return new Date(b.timestamp) - new Date(a.timestamp);
+          });
+          
+          aiStatus.logs = combinedLogs;
+          
+          if (combinedLogs.length === 0) {
+            logsTable.innerHTML = `
+              <tr>
+                <td colspan="5" class="text-center py-4">
+                  <i class="fas fa-info-circle me-2"></i>No logs found matching the filter.
+                </td>
+              </tr>
+            `;
+            return;
+          }
+          
+          logsTable.innerHTML = '';
+          
+          combinedLogs.slice(0, 100).forEach(log => {
+            const row = document.createElement('tr');
+            
+            // Format the log message - truncate if too long
+            const message = log.message && log.message.length > 50 ? log.message.substring(0, 50) + '...' : log.message || '';
+            
+            // Determine event type badge color
+            let eventBadgeClass = 'bg-secondary';
+            if (log.event === 'chat_request' || log.action === 'chat_request') {
+              eventBadgeClass = 'bg-primary';
+            } else if (log.event === 'chat_response' || log.action === 'chat_response') {
+              eventBadgeClass = 'bg-success';
+            } else if (log.event === 'chat_error' || log.level === 'error') {
+              eventBadgeClass = 'bg-danger';
+            }
+            
+            row.innerHTML = `
+              <td>${new Date(log.timestamp).toLocaleString()}</td>
+              <td>
+                <span class="badge ${eventBadgeClass}">
+                  ${(log.event || log.action || '').replace('_', ' ')}
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-${(log.userRole === 'admin' || log.category === 'admin') ? 'danger' : 'info'}">
+                  ${log.userRole || log.category || 'user'}
+                </span>
+              </td>
+              <td>${message}</td>
+              <td>
+                <span class="badge bg-${log.status === 'error' || log.level === 'error' ? 'danger' : 'success'}">
+                  ${log.status || log.level || 'info'}
+                </span>
+              </td>
+            `;
+            
+            logsTable.appendChild(row);
+          });
+        } else {
+          throw new Error('Invalid response format');
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching logs:', error);
+        logsTable.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center py-4 text-danger">
+              <i class="fas fa-exclamation-triangle me-2"></i>Error loading logs: ${error.message}
+            </td>
+          </tr>
+        `;
+      });
+  }
+  
+  // Function to fetch AI status from server
+  function fetchAIStatus() {
+    fetch('/assistant/status')
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch status');
+        return response.json();
+      })
+      .then(data => {
+        if (data.success && data.status) {
+          // Update local status
+          aiStatus.connected = data.status.connected;
+          aiStatus.apiKey = data.status.apiKey || "sk-****";
+          aiStatus.apiKeyMasked = data.status.apiKeyMasked || "sk-****";
+          aiStatus.model = data.status.model || "gpt-4o-mini";
+          aiStatus.active = data.status.active;
+          aiStatus.lastRequest = data.status.lastRequest;
+          aiStatus.totalRequests = data.status.totalRequests || 0;
+          
+          // Update UI
+          updateAIStatusDisplay();
+          
+          // Show success status
+          const statusContainer = document.getElementById('ai-status-container');
+          if (statusContainer) {
+            statusContainer.innerHTML = `
+              <div class="alert ${aiStatus.connected ? 'alert-success' : 'alert-danger'}">
+                <div class="d-flex align-items-center">
+                  <div class="me-3">
+                    <i class="fas fa-${aiStatus.connected ? 'check-circle' : 'exclamation-triangle'} fa-2x"></i>
+                  </div>
+                  <div>
+                    <h5 class="mb-1">AI Assistant is ${aiStatus.connected ? 'Online' : 'Offline'}</h5>
+                    <p class="mb-0">
+                      ${aiStatus.connected ? 'The AI assistant is connected and ready to use.' : 'The AI assistant is currently offline. Please check your API key or connection.'} 
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row g-4 mt-2">
+                <div class="col-md-4">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <h6 class="card-title">Total Requests</h6>
+                      <h2 class="mb-0">${aiStatus.totalRequests}</h2>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-4">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <h6 class="card-title">Admin Requests</h6>
+                      <h2 class="mb-0">${data.status.requestStats?.admin || 0}</h2>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-4">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <h6 class="card-title">User Requests</h6>
+                      <h2 class="mb-0">${data.status.requestStats?.user || 0}</h2>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        } else {
+          throw new Error('Invalid response format');
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching AI status:', error);
+        const statusContainer = document.getElementById('ai-status-container');
+        if (statusContainer) {
+          statusContainer.innerHTML = `
+            <div class="alert alert-danger">
+              <div class="d-flex align-items-center">
+                <div class="me-3">
+                  <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </div>
+                <div>
+                  <h5 class="mb-1">Error Fetching AI Status</h5>
+                  <p class="mb-0">${error.message}</p>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        
+        // Update local status to reflect error
+        aiStatus.connected = false;
+        aiStatus.active = false;
+        updateAIStatusDisplay();
+      });
+  }
+  
+  // Function to test the AI connection
+  function testAIConnection() {
+    const statusBtn = document.getElementById('test-ai-connection');
+    statusBtn.disabled = true;
+    statusBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Testing...';
+    
+    // Make API request to test connection
+    fetch('/assistant/test-connection', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ test: true })
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to test connection');
+      return response.json();
+    })
+    .then(data => {
+      if (data.success && data.connected) {
+        // Update local status
+        aiStatus.connected = true;
+        aiStatus.active = true;
+        updateAIStatusDisplay();
+        
+        // Show success message
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success mt-3';
+        alertDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i>${data.message || 'Connection to OpenAI API successful!'}`;
+        document.getElementById('ai-status-details').before(alertDiv);
+        
+        // Refresh status display
+        fetchAIStatus();
+        
+        // Refresh logs
+        updateLogsTable();
+        
+        setTimeout(() => alertDiv.remove(), 5000);
+      } else {
+        throw new Error(data.error || 'Connection test failed');
+      }
+    })
+    .catch(error => {
+      console.error('Error testing AI connection:', error);
+      
+      // Update local status
+      aiStatus.connected = false;
+      aiStatus.active = false;
+      updateAIStatusDisplay();
+      
+      // Show error message
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-danger mt-3';
+      alertDiv.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>Failed to connect to OpenAI API: ${error.message}`;
+      document.getElementById('ai-status-details').before(alertDiv);
+      
+      setTimeout(() => alertDiv.remove(), 5000);
+    })
+    .finally(() => {
+      statusBtn.disabled = false;
+      statusBtn.innerHTML = '<i class="fas fa-plug me-1"></i>Test Connection';
+    });
+  }
+  
+  // Function to clear logs
+  function clearLogs() {
+    if (confirm('Are you sure you want to clear all logs? This cannot be undone.')) {
+      fetch('/assistant/clear-logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to clear logs');
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          // Clear local logs
+          aiStatus.logs = [];
+          updateLogsTable();
+          
+          // Show success message
+          const alertDiv = document.createElement('div');
+          alertDiv.className = 'alert alert-success';
+          alertDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>Logs cleared successfully.';
+          document.querySelector('#ai-logs-table').parentNode.before(alertDiv);
+          
+          setTimeout(() => alertDiv.remove(), 3000);
+        } else {
+          throw new Error(data.error || 'Failed to clear logs');
+        }
+      })
+      .catch(error => {
+        console.error('Error clearing logs:', error);
+        
+        // Show error message
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger';
+        alertDiv.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}`;
+        document.querySelector('#ai-logs-table').parentNode.before(alertDiv);
+        
+        setTimeout(() => alertDiv.remove(), 3000);
+      });
+    }
+  }
+  
+  // Function to open the AI chat interface
+  function openAIChat() {
+    const chatBtn = document.getElementById('ai-assistant-toggle');
+    if (chatBtn) {
+      chatBtn.click();
+    } else {
+      alert('AI Assistant chat interface not found. Please check if it\'s properly loaded in the page.');
+    }
+  }
+  
+  // Function to send a test message to the AI
+  function sendTestMessage() {
+    const input = document.getElementById('ai-test-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Clear the input
+    input.value = '';
+    
+    // Add the message to the test interface
+    const messagesContainer = document.getElementById('ai-test-messages');
+    
+    // User message
+    const userMessage = document.createElement('div');
+    userMessage.className = 'chat-message user-message';
+    userMessage.innerHTML = `
+      <div class="message-content">
+        <p>${message}</p>
+      </div>
+    `;
+    messagesContainer.appendChild(userMessage);
+    
+    // Loading message
+    const loadingMessage = document.createElement('div');
+    loadingMessage.className = 'chat-message assistant-message loading';
+    loadingMessage.innerHTML = `
+      <div class="message-content">
+        <div class="spinner-border spinner-border-sm text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>AI Assistant is thinking...</p>
+      </div>
+    `;
+    messagesContainer.appendChild(loadingMessage);
+    
+    // Scroll to the bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Fetch from actual API
+    fetch('/assistant/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        message, 
+        userRole: 'admin',
+        userId: 'admin_test'
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Remove loading message
+      messagesContainer.removeChild(loadingMessage);
+      
+      // AI response
+      const aiResponse = document.createElement('div');
+      aiResponse.className = 'chat-message assistant-message';
+      aiResponse.innerHTML = `
+        <div class="message-content">
+          <p>${data.response.replace(/\n/g, '<br>')}</p>
+        </div>
+      `;
+      messagesContainer.appendChild(aiResponse);
+      
+      // Refresh status after sending message
+      fetchAIStatus();
+      
+      // Refresh logs
+      updateLogsTable();
+    })
+    .catch(error => {
+      console.error('Error sending message:', error);
+      
+      // Remove loading message
+      messagesContainer.removeChild(loadingMessage);
+      
+      // Error message
+      const errorMessage = document.createElement('div');
+      errorMessage.className = 'chat-message assistant-message error';
+      errorMessage.innerHTML = `
+        <div class="message-content">
+          <p>Sorry, I encountered an error: ${error.message}</p>
+        </div>
+      `;
+      messagesContainer.appendChild(errorMessage);
+    });
+    
+    // Scroll to the bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+  
+  // Initialize status and logs
+  fetchAIStatus();
+  updateLogsTable();
+  
+  // Event listeners
+  document.getElementById('show-api-key').addEventListener('click', function() {
+    const showing = this.dataset.showing === 'true';
+    this.dataset.showing = showing ? 'false' : 'true';
+    this.innerHTML = showing ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+    document.getElementById('ai-api-key').textContent = showing 
+      ? aiStatus.apiKeyMasked 
+      : aiStatus.apiKey;
+  });
+  
+  document.getElementById('test-ai-connection').addEventListener('click', testAIConnection);
+  document.getElementById('clear-ai-logs').addEventListener('click', clearLogs);
+  document.getElementById('open-ai-chat').addEventListener('click', openAIChat);
+  
+  document.getElementById('ai-test-send').addEventListener('click', sendTestMessage);
+  document.getElementById('ai-test-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendTestMessage();
+    }
+  });
+  
+  document.getElementById('refresh-ai-status').addEventListener('click', function() {
+    fetchAIStatus();
+    
+    // Show refresh animation
+    this.innerHTML = '<i class="fas fa-sync-alt fa-spin me-1"></i>Refreshing...';
+    setTimeout(() => {
+      this.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
+    }, 1000);
+  });
+  
+  document.getElementById('refresh-ai-logs').addEventListener('click', function() {
+    updateLogsTable();
+    
+    // Show refresh animation
+    this.innerHTML = '<i class="fas fa-sync-alt fa-spin me-1"></i>Refreshing...';
+    setTimeout(() => {
+      this.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh';
+    }, 1000);
+  });
+  
+  // Filter logs
+  document.querySelectorAll('#logFilterDropdown + .dropdown-menu .dropdown-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Update active state
+      document.querySelectorAll('#logFilterDropdown + .dropdown-menu .dropdown-item').forEach(i => {
+        i.classList.remove('active');
+      });
+      this.classList.add('active');
+      
+      // Update filter text
+      document.getElementById('logFilterDropdown').textContent = this.textContent;
+      
+      // Apply filter
+      const filter = this.getAttribute('data-filter');
+      updateLogsTable(filter);
+    });
+  });
+  
+  // Initialize AI assistant tab view when clicked
+  document.getElementById('ai-assistant-tab').addEventListener('click', function() {
+    fetchAIStatus();
+    updateLogsTable();
+  });
+});
+
+// MongoDB Explorer Scripts
+document.addEventListener('DOMContentLoaded', function() {
+  // Variables
+  let currentCollection = null;
+  let currentPage = 0;
+  let pageSize = 10;
+  let totalDocuments = 0;
+  
+  // DOM elements
+  const debugPanel = document.getElementById('mongodb-debug-panel');
+  const debugContent = document.getElementById('mongodb-debug-content');
+  const collectionList = document.querySelector('.collection-list');
+  const dataContainer = document.querySelector('.collection-data-container');
+  const collectionNameEl = document.querySelector('.current-collection-name');
+  const collectionCountEl = document.querySelector('.collection-count');
+  const refreshDataBtn = document.querySelector('.refresh-data-btn');
+  const checkMongodbBtn = document.querySelector('.check-mongodb-btn');
+  const refreshCollectionsBtn = document.querySelector('.refresh-collections-btn');
+  
+  // Initialize event listeners
+  if (checkMongodbBtn) {
+    checkMongodbBtn.addEventListener('click', checkMongoDBConnection);
+  }
+  
+  if (refreshCollectionsBtn) {
+    refreshCollectionsBtn.addEventListener('click', loadCollections);
+  }
+  
+  if (refreshDataBtn) {
+    refreshDataBtn.addEventListener('click', function() {
+      if (currentCollection) {
+        loadCollectionData(currentCollection);
+      }
+    });
+  }
+  
+  // Load collections and check connection when Database tab is clicked
+  document.getElementById('database-tab')?.addEventListener('click', function() {
+    debugPanel.style.display = 'block';
+    checkMongoDBConnection();
+    loadCollections();
+  });
+  
+  // Function to check MongoDB connection
+  function checkMongoDBConnection() {
+    debugPanel.style.display = 'block';
+    debugContent.innerHTML = `
+      <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+      Checking connection...
+    `;
+    
+    fetch('/admin/api/debug-mongodb')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const conn = data.connection;
+          
+          let statusHTML = '';
+          if (conn.status === 'connected') {
+            statusHTML = `
+              <div class="alert alert-success mb-0 p-2">
+                <strong><i class="fas fa-check-circle me-2"></i>Connected to MongoDB</strong>
+                <div class="small mt-1">Database: ${conn.databases[0] || 'N/A'}</div>
+                <div class="small">Mongoose version: ${conn.mongooseVersion}</div>
+              </div>
+            `;
+          } else {
+            statusHTML = `
+              <div class="alert alert-danger mb-0 p-2">
+                <strong><i class="fas fa-exclamation-circle me-2"></i>Not connected to MongoDB</strong>
+                <div class="small mt-1">Status: ${conn.status}</div>
+                <div class="small">Ping test: ${conn.dbTest || 'Not attempted'}</div>
+              </div>
+            `;
+          }
+          
+          debugContent.innerHTML = statusHTML;
+          
+          // If connection is good, load collections
+          if (conn.status === 'connected') {
+            loadCollections();
+          }
+        } else {
+          debugContent.innerHTML = `
+            <div class="alert alert-danger mb-0 p-2">
+              <strong><i class="fas fa-exclamation-circle me-2"></i>Error checking MongoDB connection</strong>
+              <div class="small mt-1">${data.error || 'Unknown error'}</div>
+            </div>
+          `;
+        }
+      })
+      .catch(error => {
+        console.error('Error checking MongoDB connection:', error);
+        debugContent.innerHTML = `
+          <div class="alert alert-danger mb-0 p-2">
+            <strong><i class="fas fa-exclamation-triangle me-2"></i>Failed to check MongoDB connection</strong>
+            <div class="small mt-1">${error.message}</div>
+          </div>
+        `;
+      });
+  }
+  
+  // Function to load collections
+  function loadCollections() {
+    if (!collectionList) return;
+    
+    collectionList.innerHTML = `
+      <li class="list-group-item d-flex justify-content-center align-items-center py-3">
+        <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
+        <span>Loading collections...</span>
+      </li>
+    `;
+    
+    // Try both collection endpoints for better compatibility
+    fetch('/admin/api/collection-names')
+      .then(response => {
+        if (!response.ok) {
+          // If the first endpoint fails, try the alternative
+          return fetch('/admin/api/collections');
+        }
+        return response;
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.collections) {
+          if (data.collections.length === 0) {
+            collectionList.innerHTML = `
+              <li class="list-group-item text-center">
+                <i class="fas fa-info-circle me-1"></i> No collections found
+              </li>
+            `;
+            return;
+          }
+          
+          // Sort collections alphabetically
+          const sortedCollections = data.collections.sort((a, b) => 
+            a.name.localeCompare(b.name)
+          );
+          
+          // Clear the list and populate with new data
+          collectionList.innerHTML = '';
+          
+          sortedCollections.forEach(collection => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item collection-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `
+              <div class="collection-name" data-collection="${collection.name}">
+                <i class="fas fa-table me-2 text-primary"></i>
+                ${collection.name}
+              </div>
+              <span class="badge bg-secondary rounded-pill">?</span>
+            `;
+            
+            li.addEventListener('click', function() {
+              // Highlight selected collection
+              document.querySelectorAll('.collection-item').forEach(item => {
+                item.classList.remove('active');
+              });
+              li.classList.add('active');
+              
+              // Load data for this collection
+              const name = li.querySelector('.collection-name').getAttribute('data-collection');
+              loadCollectionData(name);
+            });
+            
+            collectionList.appendChild(li);
+          });
+        } else {
+          collectionList.innerHTML = `
+            <li class="list-group-item text-center text-danger">
+              <i class="fas fa-exclamation-circle me-1"></i> 
+              Error loading collections: ${data.error || 'Unknown error'}
+            </li>
+          `;
+        }
+      })
+      .catch(error => {
+        console.error('Error loading collections:', error);
+        collectionList.innerHTML = `
+          <li class="list-group-item text-center text-danger">
+            <i class="fas fa-exclamation-triangle me-1"></i> 
+            Failed to load collections: ${error.message}
+          </li>
+        `;
+      });
+  }
+  
+  // Function to load collection data
+  function loadCollectionData(collectionName) {
+    if (!dataContainer || !collectionNameEl || !collectionCountEl || !refreshDataBtn) return;
+    
+    currentCollection = collectionName;
+    collectionNameEl.textContent = collectionName;
+    refreshDataBtn.disabled = false;
+    
+    // Show loading state
+    dataContainer.innerHTML = `
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Loading documents from ${collectionName}...</p>
+      </div>
+    `;
+    
+    // Fetch documents for this collection
+    fetch(`/admin/api/collections/${collectionName}?limit=20&skip=0`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          totalDocuments = data.count;
+          collectionCountEl.textContent = `${totalDocuments} documents`;
+          
+          if (data.documents.length === 0) {
+            dataContainer.innerHTML = `
+              <div class="text-center py-5">
+                <i class="fas fa-info-circle mb-3" style="font-size: 3rem; color: #e0e0e0;"></i>
+                <p class="text-muted">No documents in this collection</p>
+              </div>
+            `;
+            return;
+          }
+          
+          // Create a table to display the documents
+          const table = document.createElement('table');
+          table.className = 'table table-hover table-bordered mb-0';
+          
+          // Extract all unique keys from all documents for table headers
+          const allKeys = new Set();
+          data.documents.forEach(doc => {
+            Object.keys(doc).forEach(key => allKeys.add(key));
+          });
+          
+          // Add _id as the first key if it exists
+          const keys = Array.from(allKeys);
+          if (keys.includes('_id')) {
+            keys.splice(keys.indexOf('_id'), 1);
+            keys.unshift('_id');
+          }
+          
+          // Create table header
+          const thead = document.createElement('thead');
+          thead.className = 'table-light';
+          const headerRow = document.createElement('tr');
+          keys.forEach(key => {
+            const th = document.createElement('th');
+            th.textContent = key;
+            if (key === '_id') th.className = 'text-muted';
+            headerRow.appendChild(th);
+          });
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
+          
+          // Create table body
+          const tbody = document.createElement('tbody');
+          data.documents.forEach(doc => {
+            const row = document.createElement('tr');
+            
+            keys.forEach(key => {
+              const cell = document.createElement('td');
+              if (doc[key] === undefined || doc[key] === null) {
+                cell.innerHTML = '<span class="text-muted">null</span>';
+              } else if (typeof doc[key] === 'object') {
+                if (key === '_id') {
+                  cell.innerHTML = `<code class="text-muted">${doc[key].toString()}</code>`;
+                } else {
+                  // For nested objects/arrays, show a preview in a badge
+                  cell.innerHTML = `
+                    <span class="badge bg-light text-dark">
+                      ${Array.isArray(doc[key]) ? 'Array' : 'Object'} 
+                      <button class="btn btn-sm btn-link p-0 ms-1 view-json-btn">View</button>
+                    </span>
+                  `;
+                  
+                  // Add click handler to view the full JSON
+                  const viewBtn = cell.querySelector('.view-json-btn');
+                  viewBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showJsonModal(key, doc[key]);
+                  });
+                }
+              } else {
+                // Truncate long text values
+                if (typeof doc[key] === 'string' && doc[key].length > 100) {
+                  cell.innerHTML = `
+                    ${doc[key].substring(0, 100)}... 
+                    <button class="btn btn-sm btn-link p-0 ms-1 view-text-btn">View</button>
+                  `;
+                  
+                  // Add click handler to view the full text
+                  const viewBtn = cell.querySelector('.view-text-btn');
+                  viewBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showTextModal(key, doc[key]);
+                  });
+                } else {
+                  cell.textContent = doc[key].toString();
+                }
+              }
+              
+              row.appendChild(cell);
+            });
+            
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+          
+          // Clear and append the table
+          dataContainer.innerHTML = '';
+          dataContainer.appendChild(table);
+          
+          // Add pagination controls if needed
+          if (totalDocuments > 20) {
+            addPaginationControls();
+          }
+        } else {
+          dataContainer.innerHTML = `
+            <div class="alert alert-danger m-3">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              Error loading documents: ${data.error || 'Unknown error'}
+            </div>
+          `;
+        }
+      })
+      .catch(error => {
+        console.error(`Error loading data for ${collectionName}:`, error);
+        dataContainer.innerHTML = `
+          <div class="alert alert-danger m-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Failed to load documents: ${error.message}
+          </div>
+        `;
+      });
+  }
+  
+  // Helper function to add pagination controls
+  function addPaginationControls() {
+    if (!dataContainer) return;
+    
+    const totalPages = Math.ceil(totalDocuments / pageSize);
+    
+    const paginationDiv = document.createElement('div');
+    paginationDiv.className = 'pagination-container d-flex justify-content-between align-items-center p-3 bg-light border-top';
+    
+    const pageInfo = document.createElement('div');
+    pageInfo.className = 'page-info';
+    pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+    
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'btn-group';
+    
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn btn-sm btn-outline-secondary';
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 0;
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 0) {
+        currentPage--;
+        loadCollectionData(currentCollection);
+      }
+    });
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-sm btn-outline-secondary';
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.disabled = currentPage >= totalPages - 1;
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages - 1) {
+        currentPage++;
+        loadCollectionData(currentCollection);
+      }
+    });
+    
+    controlsDiv.appendChild(prevBtn);
+    controlsDiv.appendChild(nextBtn);
+    
+    paginationDiv.appendChild(pageInfo);
+    paginationDiv.appendChild(controlsDiv);
+    
+    dataContainer.appendChild(paginationDiv);
+  }
+  
+  // Helper function to show JSON modal
+  function showJsonModal(title, data) {
+    // Create modal elements
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal fade';
+    modalDiv.id = 'jsonViewerModal';
+    modalDiv.tabIndex = '-1';
+    modalDiv.setAttribute('aria-hidden', 'true');
+    
+    modalDiv.innerHTML = `
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">${title}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <pre class="bg-light p-3 mb-0" style="max-height: 400px; overflow-y: auto;"><code>${JSON.stringify(data, null, 2)}</code></pre>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Append to body, show and then remove on hide
+    document.body.appendChild(modalDiv);
+    const modal = new bootstrap.Modal(modalDiv);
+    modal.show();
+    
+    modalDiv.addEventListener('hidden.bs.modal', function () {
+      document.body.removeChild(modalDiv);
+    });
+  }
+  
+  // Helper function to show text modal
+  function showTextModal(title, text) {
+    // Create modal elements
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal fade';
+    modalDiv.id = 'textViewerModal';
+    modalDiv.tabIndex = '-1';
+    modalDiv.setAttribute('aria-hidden', 'true');
+    
+    modalDiv.innerHTML = `
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">${title}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="bg-light p-3 mb-0" style="max-height: 400px; overflow-y: auto;">
+              ${text.replace(/\n/g, '<br>')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Append to body, show and then remove on hide
+    document.body.appendChild(modalDiv);
+    const modal = new bootstrap.Modal(modalDiv);
+    modal.show();
+    
+    modalDiv.addEventListener('hidden.bs.modal', function () {
+      document.body.removeChild(modalDiv);
+    });
+  }
+});
+</script>
+
+<!-- Translation Manager Admin Script -->
+<script src="/js/admin/translationManager.js"></script>
+
+<!-- User Manager Admin Script -->
+<script src="/js/admin/userManager.js"></script>

@@ -1,0 +1,44 @@
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addUserModalLabel"><%= locals.t ? t("Add New User") : "Add New User" %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="/users">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="name" class="form-label"><%= locals.t ? t("Username") : "Username" %></label>
+            <input type="text" class="form-control" id="name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label"><%= locals.t ? t("Email (Optional)") : "Email (Optional)" %></label>
+            <input type="email" class="form-control" id="email" name="email">
+          </div>
+          <div class="mb-3">
+            <label for="avatar" class="form-label"><%= locals.t ? t("Avatar URL (Optional)") : "Avatar URL (Optional)" %></label>
+            <input type="url" class="form-control" id="avatar" name="avatar">
+            <div class="form-text"><%= locals.t ? t("Leave blank for default avatar") : "Leave blank for default avatar" %></div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="isDeveloper" name="isDeveloper">
+              <label class="form-check-label" for="isDeveloper"><%= locals.t ? t("Developer Status") : "Developer Status" %></label>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="isAdmin" name="isAdmin">
+              <label class="form-check-label" for="isAdmin"><%= locals.t ? t("Admin Status") : "Admin Status" %></label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><%= locals.t ? t("Cancel") : "Cancel" %></button>
+          <button type="submit" class="btn btn-primary"><%= locals.t ? t("Add User") : "Add User" %></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

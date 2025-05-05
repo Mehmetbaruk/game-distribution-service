@@ -1,0 +1,331 @@
+<div class="mb-4">
+  <div class="alert alert-info">
+    <div class="d-flex align-items-center">
+      <div class="me-3">
+        <i class="fas fa-chart-line fa-2x"></i>
+      </div>
+      <div>
+        <h5 class="mb-1">Analytics Dashboard</h5>
+        <p class="mb-0">Track player activity, game performance, and user engagement metrics.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Most Played Users Section -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+    <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Most Played Users</h5>
+    <button class="btn btn-sm btn-outline-light" id="viewAllUsersBtn">
+      <i class="fas fa-expand-alt me-1"></i> Full View
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th>#</th>
+            <th class="sortable" data-sort="user">User <i class="fas fa-sort"></i></th>
+            <th class="sortable" data-sort="playtime">Total Play Time <i class="fas fa-sort"></i></th>
+            <th class="sortable" data-sort="game">Most Played Game <i class="fas fa-sort"></i></th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% 
+            // Sort users by total play time if users are defined
+            const sortedUsers = typeof users !== 'undefined' && users && users.length > 0 ? 
+              [...users].sort((a, b) => {
+                const aSeconds = (a.totalPlayTime || 0);
+                const bSeconds = (b.totalPlayTime || 0);
+                return bSeconds - aSeconds;
+              }) : [];
+          %>
+          <% if (sortedUsers && sortedUsers.length > 0) { %>
+            <% sortedUsers.slice(0, 5).forEach((user, index) => { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td><%= user.username || user.name || 'Anonymous User' %></td>
+                <td><%= user.totalPlayTime || 0 %> hrs</td>
+                <td>
+                  <% if (user.mostPlayedGame) { %>
+                    <%= user.mostPlayedGame %>
+                  <% } else { %>
+                    <span class="text-muted">None</span>
+                  <% } %>
+                </td>
+                <td>
+                  <a href="/users/<%= user._id %>" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="5" class="text-center py-4">No user data available</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer bg-white">
+    <% if (sortedUsers && sortedUsers.length > 5) { %>
+      <div class="text-center py-2">
+        <a href="#" class="text-decoration-none" id="viewMoreUsersLink">
+          <i class="fas fa-users me-1"></i> View All Users (<%= sortedUsers.length %>)
+        </a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Top Rated Games Section -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center py-3">
+    <h5 class="mb-0"><i class="fas fa-star me-2"></i>Top Rated Games</h5>
+    <button class="btn btn-sm btn-outline-dark" id="viewAllGamesBtn">
+      <i class="fas fa-expand-alt me-1"></i> Full View
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th>#</th>
+            <th class="sortable" data-sort="game">Game <i class="fas fa-sort"></i></th>
+            <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort"></i></th>
+            <th class="sortable" data-sort="num-ratings">Number of Ratings <i class="fas fa-sort"></i></th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% 
+            // Filter games with ratings > 0 if games are defined
+            const ratedGames = typeof games !== 'undefined' && games && games.length > 0 ?
+              games.filter(game => game.rating > 0)
+                   .sort((a, b) => b.rating - a.rating) : [];
+          %>
+          <% if (ratedGames && ratedGames.length > 0) { %>
+            <% ratedGames.slice(0, 5).forEach((game, index) => { 
+              const numRatings = game.userStats ? game.userStats.filter(stat => stat.rating > 0).length : 0;
+            %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td><%= game.name || 'Untitled Game' %></td>
+                <td><%= game.rating.toFixed(1) %> ★</td>
+                <td><%= numRatings %></td>
+                <td>
+                  <a href="/games/<%= game._id %>" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="5" class="text-center py-4">No rated games available</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer bg-white">
+    <% if (ratedGames && ratedGames.length > 5) { %>
+      <div class="text-center py-2">
+        <a href="#" class="text-decoration-none" id="viewMoreGamesLink">
+          <i class="fas fa-gamepad me-1"></i> View All Games (<%= ratedGames.length %>)
+        </a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Full Users Modal -->
+<div class="modal fade" id="fullUsersModal" tabindex="-1" aria-labelledby="fullUsersModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="fullUsersModalLabel">All Users by Play Time</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <% if (sortedUsers && sortedUsers.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th>#</th>
+                  <th>User</th>
+                  <th>Total Play Time</th>
+                  <th>Most Played Game</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% sortedUsers.forEach((user, index) => { %>
+                  <tr>
+                    <td><%= index + 1 %></td>
+                    <td><%= user.username || user.name || 'Anonymous User' %></td>
+                    <td><%= user.totalPlayTime || 0 %> hrs</td>
+                    <td>
+                      <% if (user.mostPlayedGame) { %>
+                        <%= user.mostPlayedGame %>
+                      <% } else { %>
+                        <span class="text-muted">None</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <a href="/users/<%= user._id %>" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="text-center py-4">
+            <p>No user data available</p>
+          </div>
+        <% } %>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Full Games Modal -->
+<div class="modal fade" id="fullGamesModal" tabindex="-1" aria-labelledby="fullGamesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="fullGamesModalLabel">All Games by Rating</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <% if (ratedGames && ratedGames.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th>#</th>
+                  <th>Game</th>
+                  <th>Rating</th>
+                  <th>Number of Ratings</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% ratedGames.forEach((game, index) => { 
+                  const numRatings = game.userStats ? game.userStats.filter(stat => stat.rating > 0).length : 0;
+                %>
+                  <tr>
+                    <td><%= index + 1 %></td>
+                    <td><%= game.name || 'Untitled Game' %></td>
+                    <td><%= game.rating.toFixed(1) %> ★</td>
+                    <td><%= numRatings %></td>
+                    <td>
+                      <a href="/games/<%= game._id %>" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="text-center py-4">
+            <p>No rated games available</p>
+          </div>
+        <% } %>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Additional Analytics Section -->
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-chart_bar me-2"></i>Platform Activity</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h6 class="card-title">Today's Activity</h6>
+                <h2 class="mb-0"><%= typeof todayStats !== 'undefined' ? todayStats.totalLogs || 0 : 0 %></h2>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h6 class="card-title">New Users</h6>
+                <h2 class="mb-0"><%= typeof todayStats !== 'undefined' ? todayStats.newUsers || 0 : 0 %></h2>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h6 class="card-title">Error Rate</h6>
+                <h2 class="mb-0"><%= typeof todayStats !== 'undefined' ? todayStats.errorRate || 0 : 0 %>%</h2>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle the most played users "Full View" button
+    document.getElementById('viewAllUsersBtn').addEventListener('click', function() {
+      const usersModal = new bootstrap.Modal(document.getElementById('fullUsersModal'));
+      usersModal.show();
+    });
+    
+    // Handle the "View All Users" link in card footer
+    const viewMoreUsersLink = document.getElementById('viewMoreUsersLink');
+    if (viewMoreUsersLink) {
+      viewMoreUsersLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        const usersModal = new bootstrap.Modal(document.getElementById('fullUsersModal'));
+        usersModal.show();
+      });
+    }
+    
+    // Handle the top rated games "Full View" button
+    document.getElementById('viewAllGamesBtn').addEventListener('click', function() {
+      const gamesModal = new bootstrap.Modal(document.getElementById('fullGamesModal'));
+      gamesModal.show();
+    });
+    
+    // Handle the "View All Games" link in card footer
+    const viewMoreGamesLink = document.getElementById('viewMoreGamesLink');
+    if (viewMoreGamesLink) {
+      viewMoreGamesLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        const gamesModal = new bootstrap.Modal(document.getElementById('fullGamesModal'));
+        gamesModal.show();
+      });
+    }
+  });
+</script>

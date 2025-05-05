@@ -1,0 +1,239 @@
+<div class="card shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+    <h5 class="mb-0"><i class="fas fa-database me-2"></i>MongoDB Data Explorer</h5>
+    <div>
+      <button class="btn btn-sm btn-info check-mongodb-btn me-2">
+        <i class="fas fa-sync-alt me-1"></i>Check Connection
+      </button>
+      <button class="btn btn-sm btn-primary refresh-collections-btn">
+        <i class="fas fa-sync-alt me-1"></i>Refresh
+      </button>
+    </div>
+  </div>
+  <div class="card-body">
+    <!-- MongoDB Connection Debug -->
+    <div id="mongodb-debug-panel" class="alert alert-info mb-3" style="display:none">
+      <h6><i class="fas fa-info-circle me-2"></i>MongoDB Connection Status</h6>
+      <div id="mongodb-debug-content">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+        Checking connection...
+      </div>
+    </div>
+    
+    <div class="row">
+      <!-- Collections List -->
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-header bg-light py-2">
+            <h6 class="mb-0">Collections</h6>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush collection-list">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+                <span>Loading collections...</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Collection Data -->
+      <div class="col-md-9">
+        <div class="card">
+          <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 current-collection-name">Select a collection</h6>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-secondary collection-count" disabled>0 documents</button>
+              <button class="btn btn-outline-primary toggle-view-btn" disabled title="Toggle between table view and full document view">
+                <i class="fas fa-expand-alt"></i> Full View
+              </button>
+              <button class="btn btn-outline-primary refresh-data-btn" disabled>
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="collection-data-container">
+              <div class="text-center py-5">
+                <i class="fas fa-database mb-3" style="font-size: 3rem; color: #e0e0e0;"></i>
+                <p class="text-muted">Select a collection to view data</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Core layout styles */
+  .collection-data-container {
+    height: 550px;
+    overflow: auto;
+    position: relative;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Base table container with fixed styling to ensure scrolling works */
+  .mongo-table-container {
+    width: 100%;
+    overflow-x: scroll !important;
+    overflow-y: visible;
+    padding: 0;
+    position: relative;
+    display: block;
+    border: 1px solid #dee2e6;
+  }
+  
+  /* Force the table to have a minimum width that triggers horizontal scrolling */
+  .mongo-table-container table {
+    width: auto;
+    min-width: 150%;
+    border-collapse: collapse;
+  }
+  
+  /* Set explicit widths for columns */
+  .mongo-table-container th:first-child {
+    width: 60px;
+    min-width: 60px;
+  }
+  
+  .mongo-table-container th:nth-child(2) {
+    width: 180px;
+    min-width: 180px;
+  }
+  
+  .mongo-table-container th:last-child {
+    width: 1000px !important;
+    min-width: 1000px !important;
+  }
+  
+  /* Make the document cell extra wide to force horizontal scrolling */
+  .document-cell {
+    min-width: 1000px !important;
+    width: 1000px !important;
+  }
+  
+  /* Make JSON output scrollable */
+  .document-json {
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  
+  /* Improve scrollbar visibility */
+  .mongo-table-container::-webkit-scrollbar {
+    height: 16px;
+    background-color: #f5f5f5;
+  }
+  
+  .mongo-table-container::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 8px;
+    border: 3px solid #f5f5f5;
+  }
+  
+  .mongo-table-container::-webkit-scrollbar-thumb:hover {
+    background-color: #666;
+  }
+  
+  /* Scroll indicator */
+  .has-horizontal-scroll::after {
+    content: '→';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    font-size: 24px;
+    color: rgba(0, 0, 0, 0.5);
+    background: #fff;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    animation: pulse 1.5s infinite;
+  }
+  
+  /* Visual indicator animation */
+  @keyframes pulse {
+    0% { opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { opacity: 0.3; }
+  }
+  
+  /* Debug info banner */
+  .db-debug-banner {
+    background-color: #f8f9fa;
+    border: 1px dashed #ddd;
+    padding: 5px 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Firefox-specific scrollbar styling */
+  @-moz-document url-prefix() {
+    .mongo-table-container {
+      scrollbar-width: auto;
+      scrollbar-color: #888 #f5f5f5;
+    }
+  }
+  
+  /* Full view document styles */
+  .full-view-container {
+    padding: 10px;
+  }
+  
+  .document-card {
+    margin-bottom: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .document-card .card-header {
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .document-card .card-body {
+    padding: 10px;
+    background-color: #fff;
+    max-height: 300px;
+    overflow: auto;
+  }
+  
+  .document-full-json {
+    margin: 0;
+    white-space: pre-wrap;
+    font-size: 13px;
+  }
+  
+  /* View toggle styles */
+  .table-view-active .full-view-container {
+    display: none;
+  }
+  
+  .full-view-active .mongo-table-container {
+    display: none;
+  }
+  
+  /* Add toggle active state */
+  .toggle-view-btn.active {
+    background-color: #0d6efd;
+    color: white;
+  }
+</style>

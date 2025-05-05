@@ -1,0 +1,65 @@
+<div class="row justify-content-center mt-5">
+  <div class="col-md-8">
+    <div class="card border-0 shadow-lg">
+      <div class="card-header bg-primary text-white py-3">
+        <h2 class="mb-0"><i class="fas fa-users me-2"></i><%= locals.t ? t("Login as User") : "Login as User" %></h2>
+      </div>
+      <div class="card-body p-4">
+        <div class="row">
+          <div class="col-12 mb-4">
+            <p class="lead"><%= locals.t ? t("Select a user to continue to the game platform:") : "Select a user to continue to the game platform:" %></p>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <% if (users && users.length > 0) { %>
+            <% users.forEach(user => { %>
+              <div class="col-md-4 col-sm-6">
+                <div class="card h-100 border shadow-sm hover-card">
+                  <div class="card-body text-center py-4">
+                    <div class="avatar mb-3">
+                      <i class="fas fa-user-circle fa-4x text-primary"></i>
+                    </div>
+                    <h5 class="card-title mb-3"><%= user.name %></h5>
+                    <p class="card-text text-muted">
+                      <small>
+                        <i class="fas fa-clock me-1"></i> <%= user.getFormattedPlayTime ? user.getFormattedPlayTime() : `${user.totalPlayTime || 0} hrs played` %>
+                      </small>
+                    </p>
+                    <a href="/login/<%= user._id %>" class="btn btn-primary mt-2">
+                      <i class="fas fa-sign-in-alt me-2"></i> <%= locals.t ? t("Login as") : "Login as" %> <%= user.name %>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="col-12 text-center py-5">
+              <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+              <p class="lead text-muted"><%= locals.t ? t("No users available. Please register a new user first.") : "No users available. Please register a new user first." %></p>
+              <a href="/register" class="btn btn-primary mt-3">
+                <i class="fas fa-user-plus me-2"></i> <%= locals.t ? t("Register New User") : "Register New User" %>
+              </a>
+            </div>
+          <% } %>
+        </div>
+      </div>
+      <div class="card-footer bg-light p-4 text-center">
+        <p class="mb-3"><%= locals.t ? t("Don't see your name?") : "Don't see your name?" %></p>
+        <a href="/register" class="btn btn-outline-primary">
+          <i class="fas fa-user-plus me-2"></i> <%= locals.t ? t("Register New User") : "Register New User" %>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hover-card {
+    transition: all 0.3s ease;
+  }
+  .hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+  }
+</style>

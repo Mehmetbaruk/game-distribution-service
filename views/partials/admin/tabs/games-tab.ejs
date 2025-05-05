@@ -1,0 +1,98 @@
+<div class="card shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+    <h5 class="mb-0">All Games</h5>
+    <a href="/games/new" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-2"></i>Add Game
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" id="admin-games-table">
+        <thead class="bg-light">
+          <tr>
+            <th class="sortable" data-sort="game">Game <i class="fas fa-sort"></i></th>
+            <th class="sortable" data-sort="rating">Rating <i class="fas fa-sort"></i></th>
+            <th class="sortable" data-sort="playtime">Play Time <i class="fas fa-sort"></i></th>
+            <th class="sortable" data-sort="developer">Developer <i class="fas fa-sort"></i></th>
+            <th class="sortable" data-sort="status">Status <i class="fas fa-sort"></i></th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof games !== 'undefined' && games && games.length > 0) { %>
+            <% games.forEach(game => { %>
+              <tr data-game-id="<%= game._id %>">
+                <td>
+                  <div class="d-flex align-items-center">
+                    <%= game.name || 'Untitled Game' %>
+                  </div>
+                </td>
+                <td>
+                  <% if (game.rating > 0) { %>
+                    <%= game.rating.toFixed(1) %> ★
+                  <% } else { %>
+                    <span class="text-muted">No ratings</span>
+                  <% } %>
+                </td>
+                <% 
+                  // Calculate total seconds for the data attribute
+                  const totalSeconds = game.totalPlayTimeSeconds || (game.totalPlayTime * 3600) || 0; 
+                %>
+                <td class="game-play-time playtime-cell" data-seconds="<%= totalSeconds %>">
+                  <% 
+                    if (game.getFormattedPlayTime) {
+                      %><%= game.getFormattedPlayTime() %><%
+                    } else {
+                      // Calculate formatted play time display using the single source of truth
+                      const hours = Math.floor(totalSeconds / 3600);
+                      const minutes = Math.floor((totalSeconds % 3600) / 60);
+                      const seconds = totalSeconds % 60;
+                      
+                      let timeStr = '';
+                      if (hours > 0) {
+                        timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                      } else if (minutes > 0) {
+                        timeStr = `${minutes}m ${seconds}s`;
+                      } else {
+                        timeStr = `${seconds}s`;
+                      }
+                      %><%= timeStr %><%
+                    }
+                  %>
+                </td>
+                <td>
+                  <% if (game.developer) { %>
+                    <%= game.developer.name || game.developer %>
+                  <% } else { %>
+                    <span class="text-muted">None</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (game.ratingDisabled || game.commentDisabled) { %>
+                    <span class="badge bg-warning text-dark">Restricted</span>
+                  <% } else { %>
+                    <span class="badge bg-success">Active</span>
+                  <% } %>
+                </td>
+                <td class="text-center">
+                  <a href="/games/<%= game._id %>/edit" class="btn btn-sm btn-outline-primary me-1">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a href="/games/<%= game._id %>" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="6" class="text-center py-4">
+                No games found
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

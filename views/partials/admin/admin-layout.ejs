@@ -1,0 +1,91 @@
+<!-- Admin Dashboard Layout -->
+<div class="container-fluid py-4">
+  <h1 class="mb-4"><%= typeof isDeveloperOnly !== 'undefined' && isDeveloperOnly ? 'Developer Dashboard' : 'Admin Dashboard' %></h1>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+    <% if (typeof isDeveloperOnly === 'undefined' || !isDeveloperOnly) { %>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="true">
+          <i class="fas fa-users me-2"></i>Users
+        </button>
+      </li>
+    <% } %>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link <%= typeof isDeveloperOnly !== 'undefined' && isDeveloperOnly ? 'active' : '' %>" id="games-tab" data-bs-toggle="tab" data-bs-target="#games" type="button" role="tab" aria-controls="games" aria-selected="<%= typeof isDeveloperOnly !== 'undefined' && isDeveloperOnly ? 'true' : 'false' %>">
+        <i class="fas fa-gamepad me-2"></i>Games
+      </button>
+    </li>
+    <% if (typeof isDeveloperOnly === 'undefined' || !isDeveloperOnly) { %>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab" aria-controls="analytics" aria-selected="false">
+          <i class="fas fa-chart-bar me-2"></i>Analytics
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="developers-tab" data-bs-toggle="tab" data-bs-target="#developers" type="button" role="tab" aria-controls="developers" aria-selected="false">
+          <i class="fas fa-code me-2"></i>Developers
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="database-tab" data-bs-toggle="tab" data-bs-target="#database" type="button" role="tab" aria-controls="database" aria-selected="false">
+          <i class="fas fa-database me-2"></i>Database
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="ai-assistant-tab" data-bs-toggle="tab" data-bs-target="#ai-assistant" type="button" role="tab" aria-controls="ai-assistant" aria-selected="false">
+          <i class="fas fa-robot me-2"></i>AI Assistant
+        </button>
+      </li>
+    <% } %>
+  </ul>
+
+  <!-- Tab Contents -->
+  <div class="tab-content" id="adminTabsContent">
+    <% if (typeof isDeveloperOnly === 'undefined' || !isDeveloperOnly) { %>
+      <!-- Users Tab -->
+      <div class="tab-pane fade show active" id="users" role="tabpanel" aria-labelledby="users-tab">
+        <%- include('./tabs/users-tab', { users: typeof users !== 'undefined' ? users : [] }) %>
+      </div>
+    <% } %>
+
+    <!-- Games Tab -->
+    <div class="tab-pane fade <%= typeof isDeveloperOnly !== 'undefined' && isDeveloperOnly ? 'show active' : '' %>" id="games" role="tabpanel" aria-labelledby="games-tab">
+      <%- include('./tabs/games-tab', { games: typeof games !== 'undefined' ? games : [] }) %>
+    </div>
+
+    <% if (typeof isDeveloperOnly === 'undefined' || !isDeveloperOnly) { %>
+      <!-- Analytics Tab -->
+      <div class="tab-pane fade" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
+        <%- include('./tabs/analytics-tab', { 
+          users: typeof users !== 'undefined' ? users : [], 
+          games: typeof games !== 'undefined' ? games : [] 
+        }) %>
+      </div>
+
+      <!-- Developers Tab -->
+      <div class="tab-pane fade" id="developers" role="tabpanel" aria-labelledby="developers-tab">
+        <%- include('./tabs/developers-tab', { users: typeof users !== 'undefined' ? users : [] }) %>
+      </div>
+
+      <!-- Database Tab -->
+      <div class="tab-pane fade" id="database" role="tabpanel" aria-labelledby="database-tab">
+        <%- include('./tabs/database-tab') %>
+      </div>
+
+      <!-- AI Assistant Tab -->
+      <div class="tab-pane fade" id="ai-assistant" role="tabpanel" aria-labelledby="ai-assistant-tab">
+        <%- include('./tabs/ai-assistant-tab') %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Modals -->
+  <% if (typeof isDeveloperOnly === 'undefined' || !isDeveloperOnly) { %>
+    <%- include('./modals/add-user-modal') %>
+  <% } %>
+</div>
+
+<!-- Include necessary styles and scripts -->
+<%- include('./admin-styles') %>
+<%- include('./admin-scripts') %>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="<%= locals.currentLanguage || (locals.currentUser && locals.currentUser.preferredLanguage) || 'en' %>" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | <%= locals.t ? t("Game Distribution Service") : "Game Distribution Service" %></title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="<%= locals.currentUser && locals.currentUser.isAdmin ? 'admin-page' : '' %>" 
+      data-user-id="<%= locals.currentUser ? locals.currentUser._id : '' %>"
+      data-preferred-language="<%= locals.currentLanguage || (locals.currentUser && locals.currentUser.preferredLanguage) || 'en' %>">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <i class="fas fa-gamepad me-2"></i>
+        <span class="fw-bold"><%= locals.t ? t("FreeGames") : "FreeGames" %></span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <li class="nav-item">
+            <a class="nav-link px-3" href="/"><i class="fas fa-home me-1"></i> <%= locals.t ? t("Home") : "Home" %></a>
+          </li>
+          <% if (locals.currentUser) { %>
+            <li class="nav-item">
+              <a class="nav-link px-3" href="/users/<%= currentUser._id %>"><i class="fas fa-user me-1"></i> <%= locals.t ? t("My Profile") : "My Profile" %></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link px-3" href="/games"><i class="fas fa-gamepad me-1"></i> <%= locals.t ? t("Games") : "Games" %></a>
+            </li>
+            <li class="nav-item user-dropdown dropdown">
+              <a class="nav-link px-3 dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user-circle me-1"></i> <%= currentUser.name %>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <% if (locals.currentUser.isAdmin) { %>
+                  <li><a class="dropdown-item" href="/admin"><i class="fas fa-cogs me-2"></i><%= locals.t ? t("Admin Dashboard") : "Admin Dashboard" %></a></li>
+                  <li><hr class="dropdown-divider"></li>
+                <% } %>
+                <li><a class="dropdown-item" href="/users/<%= currentUser._id %>"><i class="fas fa-user me-2"></i><%= locals.t ? t("My Profile") : "My Profile" %></a></li>
+                <li><a class="dropdown-item" href="/users/<%= currentUser._id %>/edit"><i class="fas fa-edit me-2"></i><%= locals.t ? t("Edit Profile") : "Edit Profile" %></a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i><%= locals.t ? t("Logout") : "Logout" %></a></li>
+              </ul>
+            </li>
+          <% } else { %>
+            <li class="nav-item">
+              <a class="nav-link px-3" href="/user-login"><i class="fas fa-sign-in-alt me-1"></i> <%= locals.t ? t("Login") : "Login" %></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link px-3" href="/register"><i class="fas fa-user-plus me-1"></i> <%= locals.t ? t("Register") : "Register" %></a>
+            </li>
+          <% } %>
+          <li class="nav-item ms-2">
+            <button id="language-button" onclick="promptForLanguage()" class="btn btn-sm btn-outline-light rounded-circle p-2 me-2" title="<%= locals.t ? t("Change Language") : "Change Language" %>">
+              <i class="fas fa-language"></i>
+              <% if (locals.currentLanguage && locals.currentLanguage !== 'en') { %>
+                <span class="language-code"><%= locals.currentLanguage %></span>
+              <% } else if (locals.currentUser && locals.currentUser.preferredLanguage && locals.currentUser.preferredLanguage !== 'en') { %>
+                <span class="language-code"><%= locals.currentUser.preferredLanguage %></span>
+              <% } %>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button id="theme-toggle" class="btn btn-sm btn-outline-light rounded-circle p-2" title="<%= locals.t ? t("Toggle Dark/Light Mode") : "Toggle Dark/Light Mode" %>">
+              <i class="fas fa-moon"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  <% if (locals.message) { %>
+    <div class="container mt-3">
+      <div class="alert alert-<%= message.type %> alert-dismissible fade show shadow-sm" role="alert">
+        <div class="d-flex align-items-center">
+          <% if (message.type === 'success') { %>
+            <i class="fas fa-check-circle me-2"></i>
+          <% } else if (message.type === 'danger') { %>
+            <i class="fas fa-exclamation-circle me-2"></i>
+          <% } else if (message.type === 'warning') { %>
+            <i class="fas fa-exclamation-triangle me-2"></i>
+          <% } else if (message.type === 'info') { %>
+            <i class="fas fa-info-circle me-2"></i>
+          <% } %>
+          <div><%= message.text %></div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- Main Content -->
+  <main class="py-4">
+    <div class="container">
+      <%- body %>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white py-4 mt-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6 mb-3 mb-md-0">
+          <div class="d-flex align-items-center mb-2">
+            <i class="fas fa-gamepad me-2 fs-3"></i>
+            <h5 class="fw-bold mb-0">FreeGames</h5>
+          </div>
+          <p class="mb-0 text-muted small">THKU Department of Software Engineering</p>
+          <p class="mb-0 text-muted small">SENG 454 Cloud Systems and Networks - Term Project</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <h5 class="mb-2"><%= locals.t ? t("Quick Links") : "Quick Links" %></h5>
+          <ul class="list-inline mb-0">
+            <li class="list-inline-item">
+              <a href="/" class="text-decoration-none text-secondary"><%= locals.t ? t("Home") : "Home" %></a>
+            </li>
+            <li class="list-inline-item">
+              <a href="/games" class="text-decoration-none text-secondary"><%= locals.t ? t("Games") : "Games" %></a>
+            </li>
+          </ul>
+          <p class="mt-3 mb-0 text-muted">&copy; <%= new Date().getFullYear() %> Game Distribution Service</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- AI Assistant Chat Interface -->
+  <% if (locals.currentUser) { %>
+    <!-- Chat Toggle Button -->
+    <button id="ai-assistant-toggle" class="ai-assistant-toggle" title="<%= locals.t ? t("AI Assistant") : "AI Assistant" %>">
+      <i class="fas fa-robot"></i>
+    </button>
+    
+    <!-- Chat Container -->
+    <div id="ai-assistant-container" class="ai-assistant-container">
+      <div class="ai-assistant-header">
+        <h3>
+          <i class="fas fa-robot me-2"></i>
+          <% if (locals.currentUser.isAdmin) { %>
+            <%= locals.t ? t("Admin Assistant") : "Admin Assistant" %>
+          <% } else { %>
+            <%= locals.t ? t("Game Assistant") : "Game Assistant" %>
+          <% } %>
+        </h3>
+        <button class="close-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div id="ai-assistant-messages" class="ai-assistant-messages">
+        <div class="chat-message assistant-message">
+          <div class="message-content">
+            <p>
+              <% if (locals.currentUser.isAdmin) { %>
+                <%= locals.t ? t("Hello, Admin! I'm your AI assistant. Ask me about platform statistics, user activity, or any other administrative information you need.") : "Hello, Admin! I'm your AI assistant. Ask me about platform statistics, user activity, or any other administrative information you need." %>
+              <% } else { %>
+                <%= locals.t ? t("Hello! I'm your game assistant. I can help you discover games, get recommendations, or answer questions about the platform.") : "Hello! I'm your game assistant. I can help you discover games, get recommendations, or answer questions about the platform." %>
+              <% } %>
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="ai-assistant-input-container">
+        <input 
+          type="text" 
+          id="ai-assistant-input" 
+          class="ai-assistant-input" 
+          placeholder="<%= locals.t ? t("Type your message...") : "Type your message..." %>"
+          aria-label="Type your message"
+        >
+        <button id="ai-assistant-send" class="ai-assistant-send" title="<%= locals.t ? t("Send message") : "Send message" %>">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Add user data to body for AI context -->
+    <% if (locals.currentUser) { %>
+      <div 
+        hidden 
+        data-user-id="<%= currentUser._id %>" 
+        data-user-name="<%= currentUser.name %>"
+        data-user-role="<%= currentUser.isAdmin ? 'admin' : 'user' %>"
+      ></div>
+    <% } %>
+  <% } %>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS -->
+  <script src="/js/main.js" type="module"></script>
+  
+  <!-- Language Button Direct Script -->
+  <script>
+    // Direct language prompt function as a backup
+    function promptForLanguage() {
+      console.log("Language button clicked! (Direct handler)");
+      const languageInput = window.prompt("What's your preferred language? Please specify.");
+      if (!languageInput) return;
+      
+      console.log("Language input:", languageInput);
+      
+      // Send to server for validation
+      fetch('/users/validate-language', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ languageInput })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Language validation response:", data);
+        if (data.success && data.languageCode) {
+          console.log("Changing language to:", data.languageCode);
+          
+          // Save preference
+          const userId = document.body.dataset.userId || 'admin';
+          console.log("User ID for language update:", userId);
+          
+          fetch(`/users/${userId}/language`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ preferredLanguage: data.languageCode })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log("Language preference saved:", data);
+            // Reload page to apply new language
+            window.location.reload();
+          })
+          .catch(error => {
+            console.error("Error saving language preference:", error);
+            // Still try to reload the page
+            window.location.reload();
+          });
+        } else {
+          // Try simple fallback with direct matching
+          tryDirectLanguageMatch(languageInput);
+        }
+      })
+      .catch(error => {
+        console.error("Error validating language:", error);
+        tryDirectLanguageMatch(languageInput);
+      });
+    }
+    
+    // Fallback direct language matching
+    function tryDirectLanguageMatch(input) {
+      const supportedLanguages = {
+        'en': 'English', 'es': 'Spanish', 'fr': 'French', 'de': 'German', 
+        'it': 'Italian', 'pt': 'Portuguese', 'ru': 'Russian', 'zh': 'Chinese',
+        'ja': 'Japanese', 'ko': 'Korean', 'ar': 'Arabic', 'hi': 'Hindi', 
+        'tr': 'Turkish', 'nl': 'Dutch', 'sv': 'Swedish', 'pl': 'Polish',
+        'vi': 'Vietnamese', 'th': 'Thai', 'id': 'Indonesian', 'sw': 'Swahili'
+      };
+      
+      // Try matching by code or name
+      const input_lower = input.toLowerCase();
+      let matched = false;
+      
+      // Check exact match with language code
+      if (supportedLanguages[input_lower]) {
+        changeLanguageDirectly(input_lower);
+        matched = true;
+      } else {
+        // Check match with language name
+        for (const [code, name] of Object.entries(supportedLanguages)) {
+          if (name.toLowerCase() === input_lower) {
+            changeLanguageDirectly(code);
+            matched = true;
+            break;
+          }
+        }
+      }
+      
+      if (!matched) {
+        alert(`Language "${input}" not recognized. Available languages: ${Object.values(supportedLanguages).join(', ')}`);
+      }
+    }
+    
+    // Directly change language and reload
+    function changeLanguageDirectly(languageCode) {
+      console.log("Directly changing language to:", languageCode);
+      const userId = document.body.dataset.userId || 'admin';
+      
+      // Save preference
+      fetch(`/users/${userId}/language`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferredLanguage: languageCode })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Language preference saved:", data);
+        // Save also in localStorage as fallback
+        localStorage.setItem('preferredLanguage', languageCode);
+        // Reload page to apply new language
+        window.location.reload();
+      })
+      .catch(error => {
+        console.error("Error saving language preference:", error);
+        // Still save in localStorage and reload
+        localStorage.setItem('preferredLanguage', languageCode);
+        window.location.reload();
+      });
+    }
+    
+    console.log("Language button direct handler initialized");
+  </script>
+  
+  <!-- Theme Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const themeToggleBtn = document.getElementById('theme-toggle');
+      const themeIcon = themeToggleBtn.querySelector('i');
+      const htmlElement = document.documentElement;
+      
+      // Check for saved theme preference or respect OS preference
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      // Set initial theme
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        enableDarkMode();
+      } else {
+        enableLightMode();
+      }
+      
+      // Toggle theme on button click
+      themeToggleBtn.addEventListener('click', function() {
+        if (htmlElement.getAttribute('data-bs-theme') === 'dark') {
+          enableLightMode();
+        } else {
+          enableDarkMode();
+        }
+      });
+      
+      function enableDarkMode() {
+        htmlElement.setAttribute('data-bs-theme', 'dark');
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark');
+      }
+      
+      function enableLightMode() {
+        htmlElement.setAttribute('data-bs-theme', 'light');
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  </script>
+</body>
+</html>

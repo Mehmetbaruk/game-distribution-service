@@ -1,0 +1,470 @@
+<div class="bg-light py-4 mb-4 rounded shadow-sm">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h1 class="display-5 fw-bold text-primary mb-1"><%= locals.t ? t("Explore Games") : "Explore Games" %></h1>
+        <p class="lead text-secondary"><%= locals.t ? t("Browse all available games in our collection") : "Browse all available games in our collection" %></p>
+      </div>
+      <a href="/users/<%= currentUser._id %>" class="btn btn-outline-primary rounded-pill px-4 py-2">
+        <i class="fas fa-user me-2"></i> <%= locals.t ? t("Back to Profile") : "Back to Profile" %>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Sorting Options -->
+<div class="container mb-4">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body py-3">
+      <div class="row align-items-center">
+        <div class="col-md-3">
+          <h5 class="mb-md-0"><i class="fas fa-sort me-2"></i> <%= locals.t ? t("Order Games By:") : "Order Games By:" %></h5>
+        </div>
+        <div class="col-md-9">
+          <div class="d-flex flex-wrap gap-2">
+            <a href="/games?sort=name" class="btn <%= currentSort === 'name' ? 'btn-primary' : 'btn-outline-primary' %>">
+              <i class="fas fa-sort-alpha-down me-1"></i> <%= locals.t ? t("Name") : "Name" %>
+            </a>
+            <a href="/games?sort=most-played" class="btn <%= currentSort === 'most-played' ? 'btn-primary' : 'btn-outline-primary' %>">
+              <i class="fas fa-gamepad me-1"></i> <%= locals.t ? t("Most Played") : "Most Played" %>
+            </a>
+            <a href="/games?sort=top-rated" class="btn <%= currentSort === 'top-rated' ? 'btn-primary' : 'btn-outline-primary' %>">
+              <i class="fas fa-star me-1"></i> <%= locals.t ? t("Top Rated") : "Top Rated" %>
+            </a>
+            <a href="/games?sort=suggested" class="btn <%= currentSort === 'suggested' ? 'btn-primary' : 'btn-outline-primary' %>">
+              <i class="fas fa-thumbs-up me-1"></i> <%= locals.t ? t("Suggested For You") : "Suggested For You" %>
+            </a>
+            <a href="/games?sort=newest" class="btn <%= currentSort === 'newest' ? 'btn-primary' : 'btn-outline-primary' %>">
+              <i class="fas fa-calendar-alt me-1"></i> <%= locals.t ? t("Recently Added") : "Recently Added" %>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+  <% if (games && games.length > 0) { %>
+    <% games.forEach(game => { %>
+      <div class="col">
+        <div class="card h-100 border-0 shadow-sm hover-shadow transition">
+          <!-- Game Image -->
+          <div class="position-relative">
+            <img src="<%= game.photo %>" class="card-img-top" alt="<%= game.name %>" style="height: 200px; object-fit: cover;">
+            <div class="position-absolute bottom-0 start-0 p-3 w-100 bg-gradient-dark text-white">
+              <h5 class="card-title mb-0 fw-bold"><%= game.name %></h5>
+            </div>
+          </div>
+          
+          <!-- Game Info -->
+          <div class="card-body">
+            <!-- Genres -->
+            <div class="mb-3">
+              <% game.genres.forEach(genre => { %>
+                <span class="badge bg-secondary me-1 mb-1"><%= genre %></span>
+              <% }); %>
+            </div>
+            
+            <!-- Ratings & Play Time -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <% if (game.rating > 0) { %>
+                  <div class="d-flex align-items-center">
+                    <div class="me-1">
+                      <% for (let i = 1; i <= 5; i++) { %>
+                        <% if (i <= Math.round(game.rating)) { %>
+                          <i class="fas fa-star text-warning"></i>
+                        <% } else { %>
+                          <i class="far fa-star text-warning"></i>
+                        <% } %>
+                      <% } %>
+                    </div>
+                    <span class="ms-1 fw-bold"><%= game.rating.toFixed(1) %></span>
+                  </div>
+                <% } else { %>
+                  <span class="text-secondary">No ratings</span>
+                <% } %>
+              </div>
+              <div class="text-info">
+                <i class="fas fa-clock me-1"></i>
+                <span><%= game.getFormattedPlayTime ? game.getFormattedPlayTime() : `${game.totalPlayTime} hrs` %></span>
+              </div>
+            </div>
+
+            <!-- Optional Fields -->
+            <% if (game.optional1) { %>
+              <p class="card-text small mb-1">
+                <strong>Field 1:</strong> <%= game.optional1 %>
+              </p>
+            <% } %>
+            
+            <% if (game.optional2) { %>
+              <p class="card-text small mb-1">
+                <strong>Field 2:</strong> <%= game.optional2 %>
+              </p>
+            <% } %>
+          </div>
+          
+          <!-- Card Footer -->
+          <div class="card-footer bg-white border-0 pt-0">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <% if (game.ratingDisabled) { %>
+                  <span class="badge bg-danger"><i class="fas fa-star-slash me-1"></i> Rating Disabled</span>
+                <% } %>
+                <% if (game.commentDisabled) { %>
+                  <span class="badge bg-danger"><i class="fas fa-comment-slash me-1"></i> Comments Off</span>
+                <% } %>
+              </div>
+              <a href="/games/<%= game._id %>" class="btn btn-primary rounded-pill">
+                <i class="fas fa-gamepad me-1"></i> View Details
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  <% } else { %>
+    <div class="col-12">
+      <div class="alert alert-info shadow-sm p-4">
+        <div class="text-center py-4">
+          <i class="fas fa-gamepad mb-3" style="font-size: 3rem;"></i>
+          <h4><%= locals.t ? t("No games available yet") : "No games available yet" %></h4>
+          <p class="mb-0"><%= locals.t ? t("Ask an administrator to add some exciting games to the platform!") : "Ask an administrator to add some exciting games to the platform!" %></p>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<div class="container mt-5">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="display-5 fw-bold"><%= locals.t ? t("All Games") : "All Games" %></h1>
+      <p class="lead"><%= locals.t ? t("Discover, play, and rate your favorite games") : "Discover, play, and rate your favorite games" %></p>
+    </div>
+    <div class="col-md-4 text-md-end">
+      <% if (currentUser && (currentUser.roles && currentUser.roles.isAdmin) || (!currentUser.specialAdminSession)) { %>
+        <a href="/games/new" class="btn btn-primary btn-lg">
+          <i class="fas fa-plus-circle me-2"></i><%= locals.t ? t("Add New Game") : "Add New Game" %>
+        </a>
+      <% } %>
+      
+      <!-- AI Assistant Button -->
+      <button id="openAIAssistant" class="btn btn-outline-info btn-lg ms-2">
+        <i class="fas fa-robot me-2"></i><%= locals.t ? t("AI Assistant") : "AI Assistant" %>
+      </button>
+    </div>
+  </div>
+  
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-light">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="me-2"><%= locals.t ? t("Sort By:") : "Sort By:" %></span>
+              <div class="btn-group">
+                <a href="/games?sort=name" class="btn btn-sm <%= currentSort === 'name' ? 'btn-primary' : 'btn-outline-primary' %>"><%= locals.t ? t("Name") : "Name" %></a>
+                <a href="/games?sort=most-played" class="btn btn-sm <%= currentSort === 'most-played' ? 'btn-primary' : 'btn-outline-primary' %>"><%= locals.t ? t("Most Played") : "Most Played" %></a>
+                <a href="/games?sort=top-rated" class="btn btn-sm <%= currentSort === 'top-rated' ? 'btn-primary' : 'btn-outline-primary' %>"><%= locals.t ? t("Top Rated") : "Top Rated" %></a>
+                <a href="/games?sort=newest" class="btn btn-sm <%= currentSort === 'newest' ? 'btn-primary' : 'btn-outline-primary' %>"><%= locals.t ? t("Newest") : "Newest" %></a>
+                <a href="/games?sort=suggested" class="btn btn-sm <%= currentSort === 'suggested' ? 'btn-primary' : 'btn-outline-primary' %>"><%= locals.t ? t("For You") : "For You" %></a>
+              </div>
+            </div>
+            <div>
+              <span class="badge rounded-pill text-bg-secondary"><%= games.length %> <%= locals.t ? t("games") : "games" %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if (games && games.length > 0) { %>
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+      <% games.forEach(game => { %>
+        <div class="col">
+          <div class="card h-100 shadow-sm hover-shadow transition" style="border-radius: 15px; overflow: hidden;">
+            <div style="height: 180px; overflow: hidden; position: relative;">
+              <img src="<%= game.photo || '/images/default-game.jpg' %>" class="card-img-top" alt="<%= game.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+              <div class="bg-gradient-dark position-absolute bottom-0 start-0 end-0 text-white p-2">
+                <div class="d-flex justify-content-between">
+                  <span class="me-2">
+                    <i class="fas fa-star text-warning"></i> 
+                    <%= game.rating ? game.rating.toFixed(1) : '0.0' %>
+                  </span>
+                  <span>
+                    <i class="fas fa-gamepad text-light"></i> 
+                    <% let playTime = game.totalPlayTime || 0; %>
+                    <% if (game.totalPlayTimeSeconds) { %>
+                      <% playTime = (game.totalPlayTimeSeconds / 3600).toFixed(1); %>
+                    <% } %>
+                    <%= playTime %>h
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title fw-bold text-primary"><%= game.name %></h5>
+              
+              <% if (game.genres && game.genres.length > 0) { %>
+                <p class="mb-2">
+                  <% game.genres.forEach(genre => { %>
+                    <span class="badge text-bg-secondary me-1"><%= genre %></span>
+                  <% }) %>
+                </p>
+              <% } %>
+                          
+              <div class="mt-auto">
+                <a href="/games/<%= game._id %>" class="btn btn-outline-primary w-100">
+                  <i class="fas fa-info-circle me-2"></i><%= locals.t ? t("View Details") : "View Details" %>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="row justify-content-center">
+      <div class="col-md-8 text-center">
+        <div class="alert alert-info py-5">
+          <i class="fas fa-gamepad mb-4" style="font-size: 3rem;"></i>
+          <h3 class="mb-3"><%= locals.t ? t("No Games Found") : "No Games Found" %></h3>
+          <p class="mb-0"><%= locals.t ? t("Ask an administrator to add some exciting games to the platform!") : "Ask an administrator to add some exciting games to the platform!" %></p>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<!-- AI Assistant Modal -->
+<div class="modal fade" id="aiAssistantModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-robot me-2"></i><%= locals.t ? t("AI Game Assistant") : "AI Game Assistant" %>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center mb-3">
+          <label class="form-label mb-0 me-3"><%= locals.t ? t("I want to find:") : "I want to find:" %></label>
+          <div class="btn-group flex-wrap" role="group">
+            <button class="btn btn-sm btn-outline-primary" data-query="randomGames">
+              <i class="fas fa-dice me-1"></i><%= locals.t ? t("Random Games") : "Random Games" %>
+            </button>
+            <button class="btn btn-sm btn-outline-primary" data-query="rareGames">
+              <i class="fas fa-gem me-1"></i><%= locals.t ? t("Rare Games") : "Rare Games" %>
+            </button>
+            <button class="btn btn-sm btn-outline-primary" data-query="topGames" data-criteria="plays">
+              <i class="fas fa-fire me-1"></i><%= locals.t ? t("Most Played") : "Most Played" %>
+            </button>
+            <button class="btn btn-sm btn-outline-primary" data-query="topGames" data-criteria="ratings">
+              <i class="fas fa-star me-1"></i><%= locals.t ? t("Top Rated") : "Top Rated" %>
+            </button>
+            <button class="btn btn-sm btn-outline-primary" data-query="gameRecommendations">
+              <i class="fas fa-thumbs-up me-1"></i><%= locals.t ? t("For Me") : "For Me" %>
+            </button>
+          </div>
+        </div>
+        
+        <div id="aiAssistantResults" class="mt-3">
+          <!-- Results will be displayed here -->
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status" style="display: none;">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-3">
+              <%= locals.t ? t("Select an option to get game suggestions") : "Select an option to get game suggestions" %>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <%= locals.t ? t("Close") : "Close" %>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    transition: all 0.3s ease;
+  }
+  .transition {
+    transition: all 0.3s ease;
+  }
+  .bg-gradient-dark {
+    background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0));
+  }
+</style>
+
+<!-- Initialize AI Assistant -->
+<script type="module">
+  // Import the AI Assistant client module
+  import('/js/modules/aiAssistantClient.js').then(module => {
+    const AIAssistant = window.AIAssistantClient;
+    
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = new bootstrap.Modal(document.getElementById('aiAssistantModal'));
+      const resultsContainer = document.getElementById('aiAssistantResults');
+      const queryButtons = document.querySelectorAll('[data-query]');
+      const spinner = resultsContainer.querySelector('.spinner-border');
+      
+      // Open modal when button is clicked
+      document.getElementById('openAIAssistant').addEventListener('click', () => {
+        modal.show();
+      });
+      
+      // Handle query button clicks
+      queryButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+          // Set active button
+          queryButtons.forEach(btn => btn.classList.remove('btn-primary', 'text-white'));
+          queryButtons.forEach(btn => btn.classList.add('btn-outline-primary'));
+          button.classList.remove('btn-outline-primary');
+          button.classList.add('btn-primary', 'text-white');
+          
+          // Show loading indicator
+          spinner.style.display = 'inline-block';
+          resultsContainer.querySelector('p').textContent = 'Loading results...';
+          
+          try {
+            // Get query type and parameters
+            const queryType = button.dataset.query;
+            let result;
+            
+            // Handle different query types
+            switch(queryType) {
+              case 'randomGames':
+                result = await AIAssistant.getRandomGames(8);
+                break;
+              case 'rareGames':
+                result = await AIAssistant.getRareGames(8);
+                break;
+              case 'topGames':
+                const criteria = button.dataset.criteria || 'plays';
+                result = await AIAssistant.getTopGames({ 
+                  criteria, 
+                  limit: 8 
+                });
+                break;
+              case 'gameRecommendations':
+                result = await AIAssistant.getGameRecommendations(8);
+                break;
+              default:
+                throw new Error('Unknown query type');
+            }
+            
+            // Display results
+            displayResults(queryType, result);
+          } catch (error) {
+            console.error('Error getting AI suggestions:', error);
+            resultsContainer.innerHTML = `
+              <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${error.message || 'Failed to get suggestions. Please try again.'}
+              </div>
+            `;
+          } finally {
+            spinner.style.display = 'none';
+          }
+        });
+      });
+      
+      // Helper function to display results in the modal
+      function displayResults(queryType, result) {
+        // Handle different response formats based on query type
+        let gamesArray = [];
+        let headerText = '';
+        
+        if (queryType === 'randomGames' && result.games) {
+          gamesArray = result.games;
+          headerText = 'Random Games';
+        } else if (queryType === 'rareGames' && result.games) {
+          gamesArray = result.games;
+          headerText = 'Rare & Underplayed Games';
+        } else if (queryType === 'topGames' && result.games) {
+          gamesArray = result.games;
+          const criteria = result.games[0]?.playCount !== undefined ? 'Most Played' : 'Top Rated';
+          headerText = criteria + ' Games';
+        } else if (queryType === 'gameRecommendations' && result.recommendations) {
+          if (result.recommendations.recommendations) {
+            // Regular user recommendations format
+            gamesArray = result.recommendations.recommendations;
+            headerText = 'Recommended For You';
+          } else if (result.recommendations.trending) {
+            // New user recommendations format
+            gamesArray = result.recommendations.trending;
+            headerText = 'Trending Games';
+          }
+        } else {
+          throw new Error('Unexpected response format');
+        }
+        
+        // Generate HTML for game cards
+        let html = `
+          <h4 class="mb-3"><i class="fas fa-lightbulb text-warning me-2"></i>${headerText}</h4>
+          <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3">
+        `;
+        
+        if (gamesArray.length === 0) {
+          html = `
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              No games found.
+            </div>
+          `;
+        } else {
+          // Generate game cards
+          gamesArray.forEach(game => {
+            html += `
+              <div class="col">
+                <div class="card h-100 shadow-sm hover-shadow">
+                  <div class="card-body">
+                    <h5 class="card-title">${game.name}</h5>
+                    <p class="card-text small">
+                      ${game.recommendationReason ? 
+                        `<span class="text-muted">${game.recommendationReason}</span>` : 
+                        ''}
+                    </p>
+                    ${game.rating !== undefined ? 
+                      `<div class="mb-2">
+                        <i class="fas fa-star text-warning"></i>
+                        <span>${typeof game.rating === 'number' ? game.rating.toFixed(1) : game.rating}</span>
+                      </div>` : ''}
+                    ${game.playCount !== undefined ? 
+                      `<div class="mb-2">
+                        <i class="fas fa-gamepad text-info"></i>
+                        <span>${game.playCount} plays</span>
+                      </div>` : ''}
+                  </div>
+                  <div class="card-footer bg-transparent border-top-0">
+                    <a href="/games/${game.id}" class="btn btn-sm btn-outline-primary w-100">
+                      <i class="fas fa-info-circle me-1"></i>View Details
+                    </a>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+          
+          html += `</div>`;
+        }
+        
+        resultsContainer.innerHTML = html;
+      }
+    });
+  }).catch(err => {
+    console.error('Failed to load AI Assistant module:', err);
+  });
+</script>

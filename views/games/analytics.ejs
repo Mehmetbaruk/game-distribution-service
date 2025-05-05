@@ -1,0 +1,934 @@
+<!-- Game Analytics Header -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h1 class="display-5 fw-bold text-primary mb-1"><%= game.name %> <%= typeof isAdminView !== 'undefined' && isAdminView === false ? locals.t ? t('Statistics') : 'Statistics' : locals.t ? t('Analytics') : 'Analytics' %></h1>
+        <p class="lead text-secondary"><%= typeof isAdminView !== 'undefined' && isAdminView === false ? locals.t ? t('Player activity and ratings') : 'Player activity and ratings' : locals.t ? t('Detailed statistics and performance metrics') : 'Detailed statistics and performance metrics' %></p>
+      </div>
+      <div>
+        <a href="/games/<%= game._id %>" class="btn btn-outline-primary me-2">
+          <i class="fas fa-gamepad me-1"></i> <%= locals.t ? t('Game Details') : 'Game Details' %>
+        </a>
+        <% if (currentUser.roles && currentUser.roles.isAdmin) { %>
+        <a href="/admin" class="btn btn-dark">
+          <i class="fas fa-chart-bar me-1"></i> <%= locals.t ? t('Admin Dashboard') : 'Admin Dashboard' %>
+        </a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Overview Stats Cards -->
+<div class="row g-4 mb-4">
+  <!-- Total Play Time Card -->
+  <div class="col-lg-3 col-md-6">
+    <div class="card border-0 bg-primary text-white shadow h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h5 class="card-title mb-0"><%= locals.t ? t('Total Play Time') : 'Total Play Time' %></h5>
+          <i class="fas fa-clock fa-2x opacity-50"></i>
+        </div>
+        <% 
+          const hours = Math.floor(totalPlaytimeSeconds / 3600);
+          const minutes = Math.floor((totalPlaytimeSeconds % 3600) / 60);
+          const seconds = totalPlaytimeSeconds % 60;
+          
+          let timeStr = '';
+          if (hours > 0) {
+            timeStr = `${hours}h ${minutes}m ${seconds}s`;
+          } else if (minutes > 0) {
+            timeStr = `${minutes}m ${seconds}s`;
+          } else {
+            timeStr = `${seconds}s`;
+          }
+        %>
+        <h2 class="display-6 fw-bold"><%= timeStr %></h2>
+        <p class="card-text"><%= sortedUserStats.length %> <%= locals.t ? t('unique players') : 'unique players' %></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Average Rating Card -->
+  <div class="col-lg-3 col-md-6">
+    <div class="card border-0 bg-warning text-dark shadow h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h5 class="card-title mb-0"><%= locals.t ? t('Average Rating') : 'Average Rating' %></h5>
+          <i class="fas fa-star fa-2x opacity-50"></i>
+        </div>
+        <h2 class="display-6 fw-bold"><%= game.rating > 0 ? game.rating.toFixed(1) : '0.0' %> / 5</h2>
+        <p class="card-text"><%= totalRatings %> <%= locals.t ? t('total ratings') : 'total ratings' %></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Rating Status Card -->
+  <div class="col-lg-3 col-md-6">
+    <div class="card border-0 <%= game.ratingDisabled ? 'bg-danger' : 'bg-success' %> text-white shadow h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h5 class="card-title mb-0"><%= locals.t ? t('Rating Status') : 'Rating Status' %></h5>
+          <i class="fas <%= game.ratingDisabled ? 'fa-ban' : 'fa-check-circle' %> fa-2x opacity-50"></i>
+        </div>
+        <h2 class="display-6 fw-bold"><%= game.ratingDisabled ? locals.t ? t('Disabled') : 'Disabled' : locals.t ? t('Enabled') : 'Enabled' %></h2>
+        <p class="card-text">
+          <a href="/games/<%= game._id %>/edit" class="text-white text-decoration-underline">
+            <%= game.ratingDisabled ? locals.t ? t('Enable ratings') : 'Enable ratings' : locals.t ? t('Disable ratings') : 'Disable ratings' %>
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Comment Status Card -->
+  <div class="col-lg-3 col-md-6">
+    <div class="card border-0 <%= game.commentDisabled ? 'bg-danger' : 'bg-success' %> text-white shadow h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h5 class="card-title mb-0"><%= locals.t ? t('Comment Status') : 'Comment Status' %></h5>
+          <i class="fas <%= game.commentDisabled ? 'fa-ban' : 'fa-check-circle' %> fa-2x opacity-50"></i>
+        </div>
+        <h2 class="display-6 fw-bold"><%= game.commentDisabled ? locals.t ? t('Disabled') : 'Disabled' : locals.t ? t('Enabled') : 'Enabled' %></h2>
+        <p class="card-text">
+          <a href="/games/<%= game._id %>/edit" class="text-white text-decoration-underline">
+            <%= game.commentDisabled ? locals.t ? t('Enable comments') : 'Enable comments' : locals.t ? t('Disable comments') : 'Disable comments' %>
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Most Played Users Section -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-primary text-white py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="mb-0"><i class="fas fa-trophy me-2"></i>Most Played Users</h4>
+          <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#fullPlayersStatsModal">
+            <i class="fas fa-expand-alt me-1"></i> Full View
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <% if (sortedUserStats && sortedUserStats.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 5%">#</th>
+                  <th style="width: 45%">User</th>
+                  <th style="width: 20%">Play Time</th>
+                  <th style="width: 15%">Rating</th>
+                  <th style="width: 15%">Last Played</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 
+                  let validUserCounter = 0;
+                  sortedUserStats.forEach((stat, index) => { 
+                    // Only display stats for valid users (object with actual user data)
+                    const isValidUser = stat.user && typeof stat.user === 'object' && stat.user.name;
+                    if (isValidUser) {
+                      validUserCounter++;
+                      // Only show first 10 in the main view
+                      if (validUserCounter <= 10) {
+                %>
+                  <tr>
+                    <td><%= validUserCounter %></td>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar me-3">
+                          <img 
+                            src="<%= stat.user.avatar || '/images/default-avatar.png' %>" 
+                            alt="<%= stat.user.name %>"
+                            class="rounded-circle"
+                            width="40" height="40"
+                          >
+                        </div>
+                        <div>
+                          <h6 class="mb-0"><%= stat.user.name %></h6>
+                          <a href="/users/<%= stat.user._id %>" class="small text-decoration-none">View Profile</a>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <% 
+                        const totalSeconds = stat.playTimeSeconds || (stat.playTime * 3600);
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = totalSeconds % 60;
+                        
+                        let timeStr = '';
+                        if (hours > 0) {
+                          timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                        } else if (minutes > 0) {
+                          timeStr = `${minutes}m ${seconds}s`;
+                        } else {
+                          timeStr = `${seconds}s`;
+                        }
+                      %>
+                      <span class="badge bg-primary px-3 py-2"><%= timeStr %></span>
+                    </td>
+                    <td>
+                      <% if (stat.rating && stat.rating > 0) { %>
+                        <div class="d-flex align-items-center">
+                          <div class="me-1" style="color: #ffc107;">
+                            <% for (let i = 1; i <= 5; i++) { %>
+                              <i class="<%= i <= stat.rating ? 'fas' : 'far' %> fa-star"></i>
+                            <% } %>
+                          </div>
+                          <span class="ms-1"><%= stat.rating %></span>
+                        </div>
+                      <% } else { %>
+                        <span class="text-muted">Not rated</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (stat.lastPlayedAt) { %>
+                        <span class="badge bg-light text-dark px-3 py-2">
+                          <%= new Date(stat.lastPlayedAt).toLocaleDateString() %>
+                        </span>
+                      <% } else { %>
+                        <span class="text-muted">Unknown</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% 
+                      }
+                    }
+                  }); 
+                %>
+              </tbody>
+            </table>
+            <% if (validUserCounter === 0 && sortedUserStats.length > 0) { %>
+              <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 2rem;"></i>
+                <p>Data cleanup needed: The system found user statistics without associated active users.</p>
+                <p class="text-muted mb-0">These stats belong to deleted users and are not displayed.</p>
+              </div>
+            <% } else if (validUserCounter > 10) { %>
+              <div class="text-center py-3">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#fullPlayersStatsModal">
+                  <i class="fas fa-users me-1"></i> View All <%= validUserCounter %> Players
+                </button>
+              </div>
+            <% } %>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+            <p class="text-muted mb-0">No users have played this game yet</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rating Distribution Section -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-warning text-dark py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="mb-0"><i class="fas fa-star me-2"></i>Rating Analysis</h4>
+          <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#fullRatingStatsModal">
+            <i class="fas fa-expand-alt me-1"></i> Full View
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <% 
+          // Only count ratings from valid users
+          const validRatings = game.userStats.filter(stat => 
+            stat.rating > 0 && 
+            stat.user && 
+            typeof stat.user === 'object' &&
+            stat.user.name
+          );
+          
+          const totalValidRatings = validRatings.length;
+          const validRatingDistribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+          
+          // Store users by rating for modal display
+          const usersByRating = {1: [], 2: [], 3: [], 4: [], 5: []};
+          
+          validRatings.forEach(stat => {
+            validRatingDistribution[stat.rating]++;
+            usersByRating[stat.rating].push({
+              id: stat.user._id,
+              name: stat.user.name,
+              avatar: stat.user.avatar || '/images/default-avatar.png',
+              playTimeSeconds: stat.playTimeSeconds || (stat.playTime * 3600)
+            });
+          });
+          
+          if (totalValidRatings > 0) { 
+        %>
+          <div class="mb-4">
+            <h5 class="fw-bold mb-3">Rating Distribution</h5>
+            <% for (let i = 5; i >= 1; i--) { %>
+              <div class="d-flex align-items-center mb-3">
+                <div style="width: 60px">
+                  <button class="btn btn-link p-0 text-decoration-none rating-stars-btn" data-rating="<%= i %>" data-bs-toggle="modal" data-bs-target="#ratingUsersModal<%= i %>">
+                    <strong><%= i %> <i class="fas fa-star text-warning"></i></strong>
+                  </button>
+                </div>
+                <div class="flex-grow-1 mx-2">
+                  <div class="progress rating-progress" style="height: 20px; cursor: pointer;" data-rating="<%= i %>" data-bs-toggle="modal" data-bs-target="#ratingUsersModal<%= i %>">
+                    <div class="progress-bar bg-warning" role="progressbar" 
+                         style="width: <%= (validRatingDistribution[i] / totalValidRatings) * 100 %>%" 
+                         aria-valuenow="<%= (validRatingDistribution[i] / totalValidRatings) * 100 %>" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                      <%= ((validRatingDistribution[i] / totalValidRatings) * 100).toFixed(0) %>%
+                    </div>
+                  </div>
+                </div>
+                <div style="width: 40px" class="text-end">
+                  <button class="btn btn-link p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#ratingUsersModal<%= i %>">
+                    <strong><%= validRatingDistribution[i] %></strong>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Modal for rating <%= i %> users -->
+              <div class="modal fade" id="ratingUsersModal<%= i %>" tabindex="-1" aria-labelledby="ratingUsersModal<%= i %>Label" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                  <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                      <h5 class="modal-title" id="ratingUsersModal<%= i %>Label">
+                        Users who rated <%= game.name %> <%= i %> <i class="fas fa-star text-warning"></i>
+                      </h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <% if (usersByRating[i].length > 0) { %>
+                        <div class="table-responsive">
+                          <table class="table table-hover">
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>User</th>
+                                <th>Play Time</th>
+                                <th>Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <% usersByRating[i].forEach((user, index) => { %>
+                                <tr>
+                                  <td><%= index + 1 %></td>
+                                  <td>
+                                    <div class="d-flex align-items-center">
+                                      <img src="<%= user.avatar %>" class="rounded-circle me-2" width="40" height="40" alt="<%= user.name %>">
+                                      <span><%= user.name %></span>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <% 
+                                      const hours = Math.floor(user.playTimeSeconds / 3600);
+                                      const minutes = Math.floor((user.playTimeSeconds % 3600) / 60);
+                                      const seconds = user.playTimeSeconds % 60;
+                                      
+                                      let timeStr = '';
+                                      if (hours > 0) {
+                                        timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                                      } else if (minutes > 0) {
+                                        timeStr = `${minutes}m ${seconds}s`;
+                                      } else {
+                                        timeStr = `${seconds}s`;
+                                      }
+                                    %>
+                                    <%= timeStr %>
+                                  </td>
+                                  <td>
+                                    <a href="/users/<%= user.id %>" class="btn btn-sm btn-primary">
+                                      <i class="fas fa-user me-1"></i> Profile
+                                    </a>
+                                  </td>
+                                </tr>
+                              <% }); %>
+                            </tbody>
+                          </table>
+                        </div>
+                      <% } else { %>
+                        <div class="alert alert-info mb-0">
+                          <i class="fas fa-info-circle me-2"></i> No users have rated this game <%= i %> stars.
+                        </div>
+                      <% } %>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% } %>
+          </div>
+          
+          <div class="row text-center g-3">
+            <div class="col-6">
+              <div class="card bg-light">
+                <div class="card-body py-3">
+                  <h5 class="card-title">Average Rating</h5>
+                  <p class="display-6 fw-bold mb-0"><%= game.rating.toFixed(1) %></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card bg-light">
+                <div class="card-body py-3">
+                  <h5 class="card-title">Total Ratings</h5>
+                  <p class="display-6 fw-bold mb-0"><%= totalValidRatings %></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <div class="card bg-light">
+              <div class="card-body p-3">
+                <h6 class="card-title mb-2">Rating Percentage</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="progress flex-grow-1" style="height: 8px">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: <%= (game.rating / 5) * 100 %>%" 
+                         aria-valuenow="<%= (game.rating / 5) * 100 %>" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100"></div>
+                  </div>
+                  <span class="ms-2 fw-bold"><%= ((game.rating / 5) * 100).toFixed(0) %>%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <% 
+            // Calculate percentage of valid players who rated
+            const validUserCount = sortedUserStats.filter(stat => 
+              stat.user && typeof stat.user === 'object' && stat.user.name
+            ).length;
+            const ratedPercentage = validUserCount > 0 ? (totalValidRatings / validUserCount) * 100 : 0;
+          %>
+          <div class="mt-3">
+            <div class="card bg-light">
+              <div class="card-body p-3">
+                <h6 class="card-title mb-2">Players Who Rated</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="progress flex-grow-1" style="height: 8px">
+                    <div class="progress-bar bg-primary" role="progressbar" 
+                         style="width: <%= ratedPercentage %>%" 
+                         aria-valuenow="<%= ratedPercentage %>" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100"></div>
+                  </div>
+                  <span class="ms-2 fw-bold"><%= ratedPercentage.toFixed(0) %>%</span>
+                </div>
+                <p class="small text-muted mt-2 mb-0"><%= totalValidRatings %> out of <%= validUserCount %> players rated this game</p>
+              </div>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="fas fa-star text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No Ratings Yet</h5>
+            <p class="text-muted mb-0">This game doesn't have any ratings yet</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Comments Stats Section -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-info text-white py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="mb-0"><i class="fas fa-comments me-2"></i>Comment Statistics</h4>
+          <span class="badge bg-light text-info px-3 py-2">
+            <% 
+              const commentCount = game.userStats.filter(stat => 
+                stat.comment && 
+                stat.comment.trim().length > 0 &&
+                stat.user && 
+                typeof stat.user === 'object' &&
+                stat.user.name
+              ).length;
+            %>
+            <%= commentCount %> Total Comments
+          </span>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if (game.userStats && game.userStats.some(stat => 
+          stat.comment && 
+          stat.comment.trim().length > 0 && 
+          stat.user &&
+          typeof stat.user === 'object' &&
+          stat.user.name
+        )) { %>
+          <div class="row text-center g-3 mb-4">
+            <div class="col-md-4">
+              <div class="card bg-light">
+                <div class="card-body py-3">
+                  <h5 class="card-title">Comments</h5>
+                  <p class="display-6 fw-bold mb-0"><%= commentCount %></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-light">
+                <div class="card-body py-3">
+                  <% 
+                    // Calculate comment percentage
+                    const validUserCount = sortedUserStats.filter(stat => 
+                      stat.user && typeof stat.user === 'object' && stat.user.name
+                    ).length;
+                    const commentPercentage = validUserCount > 0 ? (commentCount / validUserCount) * 100 : 0;
+                  %>
+                  <h5 class="card-title">Comment Rate</h5>
+                  <p class="display-6 fw-bold mb-0"><%= commentPercentage.toFixed(0) %>%</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-light">
+                <div class="card-body py-3">
+                  <h5 class="card-title">Status</h5>
+                  <p class="mb-0">
+                    <span class="badge <%= game.commentDisabled ? 'bg-danger' : 'bg-success' %> px-3 py-2">
+                      <%= game.commentDisabled ? 'Disabled' : 'Enabled' %>
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mb-3">Recent Comments</h5>
+          <div class="row">
+            <div class="col-12">
+              <% 
+                // Get commented user stats (only for valid users)
+                const commentedStats = game.userStats
+                  .filter(stat => 
+                    stat.comment && 
+                    stat.comment.trim().length > 0 && 
+                    stat.user && 
+                    typeof stat.user === 'object' && 
+                    stat.user.name
+                  )
+                  .sort((a, b) => {
+                    const dateA = a.lastPlayedAt ? new Date(a.lastPlayedAt) : new Date(0);
+                    const dateB = b.lastPlayedAt ? new Date(b.lastPlayedAt) : new Date(0);
+                    return dateB - dateA;
+                  })
+                  .slice(0, 5); // Show only 5 most recent comments
+              %>
+              
+              <div class="list-group">
+                <% commentedStats.forEach(stat => { %>
+                  <div class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <div class="d-flex align-items-center">
+                        <img src="<%= stat.user.avatar || '/images/default-avatar.png' %>" 
+                            class="rounded-circle me-2" alt="<%= stat.user.name %>" width="32" height="32">
+                        <h6 class="mb-0"><%= stat.user.name %></h6>
+                      </div>
+                      <small class="text-muted">
+                        <%= stat.lastPlayedAt ? new Date(stat.lastPlayedAt).toLocaleDateString() : 'Unknown date' %>
+                      </small>
+                    </div>
+                    <p class="mb-1 lead"><%= stat.comment %></p>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <small>
+                        <% 
+                          const totalSeconds = stat.playTimeSeconds || (stat.playTime * 3600);
+                          const hours = Math.floor(totalSeconds / 3600);
+                          const minutes = Math.floor((totalSeconds % 3600) / 60);
+                          const seconds = totalSeconds % 60;
+                          
+                          let timeStr = '';
+                          if (hours > 0) {
+                            timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                          } else if (minutes > 0) {
+                            timeStr = `${minutes}m ${seconds}s`;
+                          } else {
+                            timeStr = `${seconds}s`;
+                          }
+                        %>
+                        <i class="fas fa-clock text-muted me-1"></i> Played for <%= timeStr %>
+                      </small>
+                      <% if (stat.rating) { %>
+                        <small>
+                          <span class="text-warning">
+                            <% for (let i = 1; i <= 5; i++) { %>
+                              <i class="<%= i <= stat.rating ? 'fas' : 'far' %> fa-star"></i>
+                            <% } %>
+                          </span>
+                        </small>
+                      <% } %>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+              
+              <% if (commentedStats.length < commentCount) { %>
+                <div class="text-center mt-3">
+                  <a href="/games/<%= game._id %>" class="btn btn-outline-info">
+                    <i class="fas fa-comments me-2"></i> View All Comments
+                  </a>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="fas fa-comment-slash text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No Comments Yet</h5>
+            <p class="text-muted mb-0">This game doesn't have any comments yet</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Actions Section -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm border-0 bg-light">
+      <div class="card-body p-4">
+        <h4 class="mb-3"><i class="fas fa-tools me-2"></i>Admin Actions</h4>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="/games/<%= game._id %>/edit" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i> Edit Game
+          </a>
+          <a href="/games/<%= game._id %>" class="btn btn-info">
+            <i class="fas fa-gamepad me-2"></i> View Game
+          </a>
+          <% if (currentUser.roles && currentUser.roles.isAdmin) { %>
+          <a href="/admin" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
+          </a>
+          <% if (sortedUserStats.some(stat => !(stat.user && typeof stat.user === 'object' && stat.user.name))) { %>
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cleanupDataModal">
+              <i class="fas fa-broom me-2"></i> Clean Up Data
+            </button>
+          <% } %>
+          <button type="button" class="btn btn-danger ms-auto" data-bs-toggle="modal" data-bs-target="#deleteGameModal">
+            <i class="fas fa-trash-alt me-2"></i> Delete Game
+          </button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Game Modal -->
+<div class="modal fade" id="deleteGameModal" tabindex="-1" aria-labelledby="deleteGameModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteGameModalLabel">Delete Game</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">Are you sure you want to delete <strong><%= game.name %></strong>?</p>
+        <p class="mb-0 text-danger"><strong>Warning:</strong> This action cannot be undone. All play time statistics, comments, and ratings for this game will be permanently deleted.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="/games/<%= game._id %>/delete" class="btn btn-danger">Delete Game</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Clean Up Data Modal -->
+<div class="modal fade" id="cleanupDataModal" tabindex="-1" aria-labelledby="cleanupDataModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="cleanupDataModalLabel">Clean Up Game Data</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">This game contains statistics from deleted users that are no longer active in the system.</p>
+        <p>Cleaning up will:</p>
+        <ul>
+          <li>Remove all data from deleted users</li>
+          <li>Recalculate total playtime and ratings</li>
+          <li>Update game analytics to reflect current active users only</li>
+        </ul>
+        <p class="mb-0 text-warning"><strong>Note:</strong> This process cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="/games/<%= game._id %>/cleanup" class="btn btn-warning">Clean Up Data</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Full Players Stats Modal -->
+<div class="modal fade" id="fullPlayersStatsModal" tabindex="-1" aria-labelledby="fullPlayersStatsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="fullPlayersStatsModalLabel">Full Players Statistics</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <% if (sortedUserStats && sortedUserStats.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 5%">#</th>
+                  <th style="width: 45%">User</th>
+                  <th style="width: 20%">Play Time</th>
+                  <th style="width: 15%">Rating</th>
+                  <th style="width: 15%">Last Played</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 
+                  let validUserCounter = 0;
+                  sortedUserStats.forEach((stat, index) => { 
+                    const isValidUser = stat.user && typeof stat.user === 'object' && stat.user.name;
+                    if (isValidUser) {
+                      validUserCounter++;
+                %>
+                  <tr>
+                    <td><%= validUserCounter %></td>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar me-3">
+                          <img 
+                            src="<%= stat.user.avatar || '/images/default-avatar.png' %>" 
+                            alt="<%= stat.user.name %>"
+                            class="rounded-circle"
+                            width="40" height="40"
+                          >
+                        </div>
+                        <div>
+                          <h6 class="mb-0"><%= stat.user.name %></h6>
+                          <a href="/users/<%= stat.user._id %>" class="small text-decoration-none">View Profile</a>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <% 
+                        const totalSeconds = stat.playTimeSeconds || (stat.playTime * 3600);
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = totalSeconds % 60;
+                        
+                        let timeStr = '';
+                        if (hours > 0) {
+                          timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                        } else if (minutes > 0) {
+                          timeStr = `${minutes}m ${seconds}s`;
+                        } else {
+                          timeStr = `${seconds}s`;
+                        }
+                      %>
+                      <span class="badge bg-primary px-3 py-2"><%= timeStr %></span>
+                    </td>
+                    <td>
+                      <% if (stat.rating && stat.rating > 0) { %>
+                        <div class="d-flex align-items-center">
+                          <div class="me-1" style="color: #ffc107;">
+                            <% for (let i = 1; i <= 5; i++) { %>
+                              <i class="<%= i <= stat.rating ? 'fas' : 'far' %> fa-star"></i>
+                            <% } %>
+                          </div>
+                          <span class="ms-1"><%= stat.rating %></span>
+                        </div>
+                      <% } else { %>
+                        <span class="text-muted">Not rated</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (stat.lastPlayedAt) { %>
+                        <span class="badge bg-light text-dark px-3 py-2">
+                          <%= new Date(stat.lastPlayedAt).toLocaleDateString() %>
+                        </span>
+                      <% } else { %>
+                        <span class="text-muted">Unknown</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% 
+                    }
+                  }); 
+                %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+            <p class="text-muted mb-0">No users have played this game yet</p>
+          </div>
+        <% } %>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Full Rating Stats Modal -->
+<div class="modal fade" id="fullRatingStatsModal" tabindex="-1" aria-labelledby="fullRatingStatsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="fullRatingStatsModalLabel">Full Rating Statistics</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <% if (totalValidRatings > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 5%">#</th>
+                  <th style="width: 45%">User</th>
+                  <th style="width: 20%">Play Time</th>
+                  <th style="width: 15%">Rating</th>
+                  <th style="width: 15%">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 
+                  let validRatingCounter = 0;
+                  validRatings.forEach((stat, index) => { 
+                    validRatingCounter++;
+                %>
+                  <tr>
+                    <td><%= validRatingCounter %></td>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar me-3">
+                          <img 
+                            src="<%= stat.user.avatar || '/images/default-avatar.png' %>" 
+                            alt="<%= stat.user.name %>"
+                            class="rounded-circle"
+                            width="40" height="40"
+                          >
+                        </div>
+                        <div>
+                          <h6 class="mb-0"><%= stat.user.name %></h6>
+                          <a href="/users/<%= stat.user._id %>" class="small text-decoration-none">View Profile</a>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <% 
+                        const totalSeconds = stat.playTimeSeconds || (stat.playTime * 3600);
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = totalSeconds % 60;
+                        
+                        let timeStr = '';
+                        if (hours > 0) {
+                          timeStr = `${hours}h ${minutes}m ${seconds}s`;
+                        } else if (minutes > 0) {
+                          timeStr = `${minutes}m ${seconds}s`;
+                        } else {
+                          timeStr = `${seconds}s`;
+                        }
+                      %>
+                      <span class="badge bg-primary px-3 py-2"><%= timeStr %></span>
+                    </td>
+                    <td>
+                      <% if (stat.rating && stat.rating > 0) { %>
+                        <div class="d-flex align-items-center">
+                          <div class="me-1" style="color: #ffc107;">
+                            <% for (let i = 1; i <= 5; i++) { %>
+                              <i class="<%= i <= stat.rating ? 'fas' : 'far' %> fa-star"></i>
+                            <% } %>
+                          </div>
+                          <span class="ms-1"><%= stat.rating %></span>
+                        </div>
+                      <% } else { %>
+                        <span class="text-muted">Not rated</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <a href="/users/<%= stat.user._id %>" class="btn btn-sm btn-primary">
+                        <i class="fas fa-user me-1"></i> Profile
+                      </a>
+                    </td>
+                  </tr>
+                <% 
+                  }); 
+                %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="fas fa-star text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No Ratings Yet</h5>
+            <p class="text-muted mb-0">This game doesn't have any ratings yet</p>
+          </div>
+        <% } %>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPT FOR INTERACTIVE ELEMENTS -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Make rating stars clickable
+    const ratingStarsButtons = document.querySelectorAll('.rating-stars-btn');
+    ratingStarsButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const rating = this.getAttribute('data-rating');
+        const modalId = `#ratingUsersModal${rating}`;
+        const modal = new bootstrap.Modal(document.querySelector(modalId));
+        modal.show();
+      });
+    });
+
+    // Make rating progress bars clickable
+    const ratingProgressBars = document.querySelectorAll('.rating-progress');
+    ratingProgressBars.forEach(progressBar => {
+      progressBar.addEventListener('click', function() {
+        const rating = this.getAttribute('data-rating');
+        const modalId = `#ratingUsersModal${rating}`;
+        const modal = new bootstrap.Modal(document.querySelector(modalId));
+        modal.show();
+      });
+    });
+
+    // Make playtime stats clickable (opens the full players modal)
+    const playtimeBadges = document.querySelectorAll('.badge.bg-primary');
+    playtimeBadges.forEach(badge => {
+      badge.style.cursor = 'pointer';
+      badge.addEventListener('click', function() {
+        const fullPlayersModal = new bootstrap.Modal(document.querySelector('#fullPlayersStatsModal'));
+        fullPlayersModal.show();
+      });
+    });
+
+    // Ensure all "Full View" buttons work
+    const fullViewButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+    fullViewButtons.forEach(button => {
+      button.style.cursor = 'pointer';
+    });
+  });
+</script>
